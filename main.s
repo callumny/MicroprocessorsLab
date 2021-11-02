@@ -16,8 +16,8 @@ loop:
 	incf 	0x06, W, A          ; Increment W register, 
 test:
 	movwf	0x06, A		    ; Test for end of loop condition
-	movlw 	0x05		    ;reduce number of iterations from 0x63 (big number)
-	cpfsgt 	0x06, A
+	movlw 	0x63		    ;reduce number of iterations from 0x63 (big number)
+	cpfsgt 	0x06, A		    ; compare value stored at 0x06 to value stored in W and if value greter than that stoired in W then skip next line and exit loop
 	bra 	loop		    ; Not yet finished goto start of loop again
 	goto 	0x0		    ; Re-run program from start
 
