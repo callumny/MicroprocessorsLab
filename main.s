@@ -36,6 +36,6 @@ loop:
 	decfsz	counter, A	; count down to zero
 	bra	loop		; keep going until finished
 	
-	goto	0
+	goto	0   ;make sure file registers is in hex, look from 400 onwards
 
 	end	main
