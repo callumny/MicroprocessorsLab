@@ -1,41 +1,42 @@
 	#include <xc.inc>
-	
-psect	code, abs
-main:
-	org 0x0
-	goto	setup
-	
-	org 0x100		    ; Main code starts here at address 0x100
 
-	; ******* Programme FLASH read Setup Code ****  
-setup:	
-	bcf	CFGS	; point to Flash program memory  
-	bsf	EEPGD 	; access Flash program memory
-	goto	start
-	; ******* My data and where to put it in RAM *
-myTable:
-	db	'T','h','i','s',' ','i','s',' ','j','u','s','t'
-	db	' ','s','o','m','e',' ','d','a','t','a'
-	myArray EQU 0x400	; Address in RAM for data
-	counter EQU 0x10	; Address of counter variable
-	align	2		; ensure alignment of subsequent instructions 
-	; ******* Main programme *********************
-start:	
-	lfsr	0, myArray	; Load FSR0 with address in RAM	
-	movlw	low highword(myTable)	; address of data in PM
-	movwf	TBLPTRU, A	; load upper bits to TBLPTRU
-	movlw	high(myTable)	; address of data in PM
-	movwf	TBLPTRH, A	; load high byte to TBLPTRH
-	movlw	low(myTable)	; address of data in PM
-	movwf	TBLPTRL, A	; load low byte to TBLPTRL
-	movlw	22		; 22 bytes to read
-	movwf 	counter, A	; our counter register
-loop:
-        tblrd*+			; move one byte from PM to TABLAT, increment TBLPRT
-	movff	TABLAT, POSTINC0	; move read data from TABLAT to (FSR0), increment FSR0	
-	decfsz	counter, A	; count down to zero
-	bra	loop		; keep going until finished
+psect	code, abs
 	
-	goto	0   ;make sure file registers is in hex, look from 400 onwards
+main:
+	org	0x0
+	goto	start
+
+	org	0x100		    ; Main code starts here at address 0x100
+start:
+	movlw 	0x0
+	movwf	TRISB, A	    ; Port C all outputs
+	bra 	test
+	
+movlw 	high(0xDEAD)	; load 16bit number into 
+		movfw 	0x10, A			; FR 0x10 
+		movlw 	low(0xDEAD)
+		movwf 	0x11, A			; and FR 0x11
+		call	bigdelay
+		.
+		.
+		.
+
+Bigdelay:		
+		movlw 	0x00			; W=0
+Dloop: 	decf 	0x11, f, A		; no carry when 0x00 -> 0xff
+		subwfb 	0x10, f, A		; no carry when 0x00 -> 0xff
+		bc 	dloop				; if carry, then loop again
+		return					; carry not set so return
+
+loop:
+	movff 	0x06, PORTB
+	incf 	0x06, W, A
+test:
+	movwf	0x06, A	    ; Test for end of loop condition
+	movlw 	0x63
+	cpfsgt 	0x06, A
+	bra 	loop		    ; Not yet finished goto start of loop again
+	goto 	0x0		    ; Re-run program from start
 
 	end	main
+
