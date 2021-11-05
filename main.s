@@ -18,7 +18,9 @@ loop:
     
 	movlw	0xff                ; sets length of delay
 	movwf	0x10, A             ; move value of 5 to address 0x10
-	call    smalldelay
+	movlw	0xff                ; sets length of delay
+	movwf	0x11, A             ; move value of 5 to address 0x10
+	call    delayloop
 	
 	
 	movff 	0x06, PORTC	    ; Move contents of address 0x06 to PORTC (port reads the data)
@@ -32,11 +34,18 @@ test:
 	goto 	0x0		    ; Re-run program from start
 
 		
-		
+delayloop:
+    call smalldelay
+    decfsz 0x11
+    bra delayloop
+    return
+    
 smalldelay:
 	decfsz 0x10 ; skips next line if number in decreasing counter is 0
 	bra smalldelay ; branches back to loop
 	return
 	
+	
+
 	
 end	main
