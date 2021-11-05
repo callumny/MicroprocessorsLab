@@ -15,12 +15,15 @@ start:
 	movlw 	0x0
 	bra 	test		    
 loop:
-	movff 	0x06, PORTC	    ; Move contents of address 0x06 to PORTC (port reads the data)
-	incf 	0x06, W, A          ; Increment W register, 
-	
-	movlw	0x05
+    
+	movlw	0xff                ; sets length of delay
 	movwf	0x10, A             ; move value of 5 to address 0x10
 	call    smalldelay
+	
+	
+	movff 	0x06, PORTC	    ; Move contents of address 0x06 to PORTC (port reads the data)
+	incf 	0x06, W, A          ; Increment W register, 
+		
 test:
 	movwf	0x06, A		    ; Upper liit of loop, e.g while i < (value stored in PORTD)
 	movf	PORTD, W, A 	    ; reduce number of iterations from 0x63 (99d)
@@ -32,8 +35,8 @@ test:
 		
 smalldelay:
 	decfsz 0x10 ; skips next line if number in decreasing counter is 0
-	bra loop ; branches back to loop
+	bra smalldelay ; branches back to loop
 	return
 	
 	
-	end	main
+end	main
