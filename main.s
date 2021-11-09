@@ -10,7 +10,7 @@ main:
 start:
  
 	movlw 	0x0		    ; Moves 0x0 to W repositry
-	movwf	TRISD, A	    ; TRISC designates behavour to PORTC: 0x0 = 00000000 implies all pin are outputs
+ 	movwf	TRISD, A	    ; TRISC designates behavour to PORTC: 0x0 = 00000000 implies all pin are outputs
 	movwf	TRISE, A	    ; TRISD designates behavour to PORTC: 0xff = 11111111 implies all pin are inputs
 	
 	movlw 	0x0		    ; move 0x0 to W repositry
@@ -24,7 +24,8 @@ start:
 	
 	bsf	LATD, 0x1, 0	    ;sets clock low
 	bsf	LATD, 0x1, 1	    ;sets clock high (transition from low to high tells external chip to read from data pins connected to port E)
-	
 	bsf	LATD, 0x0, 0	    ; while this is low this outputs saved data from the external chip
-	goto	$		    ; this loops back to the previous command and keeps the pointer there, in theory continously outputing the signal
+	goto	start		    ; this loops back to the previous command and keeps the pointer there, in theory continously outputing the signal
 end	main
+	
+	
