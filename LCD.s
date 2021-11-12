@@ -139,6 +139,8 @@ Display_clear:
 	
 	
 button_delay:
-	movlw 
+	movlw	0xff
+	movwf	TRISJ, A
+	
     end
 
