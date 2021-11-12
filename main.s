@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
-extrn	LCD_Setup, LCD_Write_Message
+extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	
 psect	udata_acs   ; reserve data space in access ram
 counter:    ds 1    ; reserve one byte for a counter variable
@@ -52,7 +52,8 @@ loop: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	addlw	0xff		; don't send the final carriage return to LCD
 	lfsr	2, myArray
 	call	LCD_Write_Message
-
+	call    button_delay
+	call	Display_clear
 	goto	$		; goto current line in code
 
 	; a delay subroutine if you need one, times around loop in delay_count
