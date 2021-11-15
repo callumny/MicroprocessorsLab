@@ -139,10 +139,8 @@ Display_clear:
 	
 	
 button_delay:
-	bsf	TRISJ, 1
 	movlw	0xff
-	movwf	TRISJ, A
-	
+	movwf	TRISJ
 	
 	
 	
