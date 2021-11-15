@@ -139,8 +139,13 @@ Display_clear:
 	
 	
 button_delay:
-	movlw	0xff
-	movwf	TRISJ
+    
+	movlw	0xAA		;puts value of 0 in w reg
+	movwf	0x06		;puts this value at address 0x06
+	movlw	0xff		; moves all 1s to w reg
+	movwf	TRISJ		; sets Port J as all inputs
+	movf	PORTJ, W, A	;moves contents of port J to W reg
+	cpfsgt	0x06, A		;compares to value at address 0x06	  
 	
 	
 	
