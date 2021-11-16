@@ -33,23 +33,36 @@ keyboard_start:
     ;Finding Rows
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
-    ;call LCD_delay_x4us
+    
+    ;movlw   0x05		;DELAY
+   ; call LCD_delay_ms
+    
     movf PORTE, W, A
     movwf PORTD, A		; move data on w to port B 
-    ;movwf 0x06			;moves this byte to the location 0x06
     
+   ; movlw   0x05		;DELAY
+    ;call LCD_delay_ms
+   
     ;Finding Columns    
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
-    ;call LCD_delay_x4us
+    
+    ;movlw   0x05		;5ms delay
+    ;call LCD_delay_ms
+    
     movf PORTE, W, A
     movwf PORTC, A ; move data on w to port C 
-    ;movwf 0x07			; moves this byte to the location 0x07
+    
+    ;movlw   0x05		;5ms delay
+    ;call LCD_delay_ms
    
     ; Combininng data on port C and D to one byte
     movf    PORTC, W, A
     iorwf   PORTD, W, A
     movwf   PORTH, A
+    
+    ;movlw   0x05		;DELAY
+   ; call LCD_delay_ms
     
     ;read the whole 8 bits
     ; and it with 0x0F for the lower 4 bits
