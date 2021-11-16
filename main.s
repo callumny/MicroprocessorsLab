@@ -21,7 +21,7 @@ setup:
 	; ******* Main programme ****************************************
 start: 	
 	call keyboard_start
-	
+	goto setup
 	
 end start
  
