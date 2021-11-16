@@ -17,24 +17,27 @@ keyboard_setup:
     banksel	PADCFG1
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
-   
+    clrf LATB, A
+    clrf PORTB, A
+    clrf LATC, A
+    clrf PORTC, A
     clrf LATE, A ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
     movlw 0x00
-    movwf TRISA, A
     movwf TRISB, A
+    movwf TRISC, A
     
 keyboard_start: 
     ;Finding Rows
     movlw 0x0F; 11110000 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
-    call LCD_delay_x4us
+    ;call LCD_delay_x4us
     movf PORTE, W, A
     movwf PORTB, B		; move data on w to port B 
     
     ;Finding Columns    
     movlw 0xF0			; 00001111 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
-    call LCD_delay_x4us
+    ;call LCD_delay_x4us
     movf PORTE, W, A
     movwf PORTC, C		; move data on w to port C 
    
