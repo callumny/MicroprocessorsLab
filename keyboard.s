@@ -19,28 +19,35 @@ keyboard_setup:
     banksel 0
     
     movlw 0x00
-    ;clrf LATD, A
-    ;movwf PORTD, A
-    ;clrf LATC, A
-   ; movwf PORTC, A
+    clrf LATD, A
+    movwf LATD, A
+    clrf LATC, A
+    movwf LATC, A
+    clrf LATH, A
+    movwf LATH, A
     clrf LATE, A ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
     movlw 0x00
     movwf TRISD, A
     movwf TRISC, A
     movwf TRISH, A
     
-keyboard_start: 
+    
+; D should be at adress less than C, rows than columns DDDDCCCC 
+    ; D at 0x06, C at 0x07
+    
+    
+keyboard_start: ; press and hold button 
     ;Finding Rows
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
     
     ;movlw   0x05		;DELAY
-   ; call LCD_delay_ms
+    ;call LCD_delay_ms
     
     movf PORTE, W, A
-    movwf PORTD, A		; move data on w to port B 
+    movwf 0x06, A		; move data on w to adress 0x06 
     
-   ; movlw   0x05		;DELAY
+    ;movlw   0x05		;DELAY
     ;call LCD_delay_ms
    
     ;Finding Columns    
@@ -51,18 +58,23 @@ keyboard_start:
     ;call LCD_delay_ms
     
     movf PORTE, W, A
-    movwf PORTC, A ; move data on w to port C 
+    movwf 0x07, A ; move data on w to port C 
     
     ;movlw   0x05		;5ms delay
     ;call LCD_delay_ms
-   
+  
     ; Combininng data on port C and D to one byte
-    movf    PORTC, W, A
-    iorwf   PORTD, W, A
+    movf    0x06, W, A ; displyaing row nibble
+    movwf   PORTD, A
+    movf    0x07, W, A ; displaying coloumn nibble
+    movwf   PORTC, A
+    
+    movf    0x06, W, A
+    iorwf   0x07, W, A
     movwf   PORTH, A
     
     ;movlw   0x05		;DELAY
-   ; call LCD_delay_ms
+    ;call LCD_delay_ms
     
     ;read the whole 8 bits
     ; and it with 0x0F for the lower 4 bits
