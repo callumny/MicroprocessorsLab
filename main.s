@@ -22,5 +22,7 @@ setup:
 start: 	
 	call keyboard_start
 	
-	end	rst
+	goto start
+	
+end
  
