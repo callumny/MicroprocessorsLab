@@ -17,31 +17,35 @@ keyboard_setup:
     banksel	PADCFG1
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
-    clrf LATB, A
-    clrf PORTB, A
-    clrf LATC, A
-    clrf PORTC, A
+    
+    movlw 0x00
+    ;clrf LATD, A
+    ;movwf PORTD, A
+    ;clrf LATC, A
+   ; movwf PORTC, A
     clrf LATE, A ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
     movlw 0x00
-    movwf TRISB, A
+    movwf TRISD, A
     movwf TRISC, A
     
 keyboard_start: 
     ;Finding Rows
-    movlw 0x0F; 11110000 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
+    movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
     ;call LCD_delay_x4us
     movf PORTE, W, A
-    movwf PORTB, B		; move data on w to port B 
+    movwf PORTD, A		; move data on w to port B 
+    movwf 0x06			;moves this byte to the location 0x06
     
     ;Finding Columns    
-    movlw 0xF0			; 00001111 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
+    movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
     ;call LCD_delay_x4us
     movf PORTE, W, A
-    movwf PORTC, C		; move data on w to port C 
+    movwf PORTC, A ; move data on w to port C 
+    movwf 0x07			; moves this byte to the location 0x07
    
-    ; Combininng data on port A and B to one byte
+    ; Combininng data on port C and D to one byte
     
     
     
