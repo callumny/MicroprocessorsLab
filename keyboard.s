@@ -12,7 +12,6 @@ LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
 psect	uart_code,class=CODE
 keyboard_Setup:
     
-    bsr	PADCFG1
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     
     clrf LATE ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
