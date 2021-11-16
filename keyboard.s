@@ -27,6 +27,7 @@ keyboard_setup:
     movlw 0x00
     movwf TRISD, A
     movwf TRISC, A
+    movwf TRISH, A
     
 keyboard_start: 
     ;Finding Rows
@@ -35,7 +36,7 @@ keyboard_start:
     ;call LCD_delay_x4us
     movf PORTE, W, A
     movwf PORTD, A		; move data on w to port B 
-    movwf 0x06			;moves this byte to the location 0x06
+    ;movwf 0x06			;moves this byte to the location 0x06
     
     ;Finding Columns    
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
@@ -43,11 +44,12 @@ keyboard_start:
     ;call LCD_delay_x4us
     movf PORTE, W, A
     movwf PORTC, A ; move data on w to port C 
-    movwf 0x07			; moves this byte to the location 0x07
+    ;movwf 0x07			; moves this byte to the location 0x07
    
     ; Combininng data on port C and D to one byte
-    
-    
+    movf    PORTC, W, A
+    iorwf   PORTD, W, A
+    movwf   PORTH, A
     
     ;read the whole 8 bits
     ; and it with 0x0F for the lower 4 bits

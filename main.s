@@ -22,7 +22,6 @@ setup:
 start: 	
 	call keyboard_start
 	
-	goto start
 	
-end
+end start
  
