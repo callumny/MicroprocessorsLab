@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global  LCD_Setup, LCD_Write_Message, Display_clear
+global  LCD_Setup, LCD_Write_Message, Display_clear, LCD_delay_ms
 
 psect	udata_acs   ; named variables in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -108,6 +108,7 @@ LCD_Enable:	    ; pulse enable bit LCD_E for 500ns
 ; ** a few delay routines below here as LCD timing can be quite critical ****
 LCD_delay_ms:		    ; delay given in ms in W
 	movwf	LCD_cnt_ms, A
+
 lcdlp2:	movlw	250	    ; 1 ms delay
 	call	LCD_delay_x4us	
 	decfsz	LCD_cnt_ms, A
