@@ -1,7 +1,7 @@
 #include <xc.inc>
     
 global  keyboard_setup, keyboard_start, Recombine
-
+    
 psect	udata_acs   ; reserve data space in access ram
 keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -10,6 +10,13 @@ LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
 row_byte:       ds 1   ; reserve 1 byte for row byte
 column_byte:    ds 1   ; reserve 1 byte for column byte
 key_byte:       ds 1   ; reserve 1 byte for combined row and column    
+
+psect	data
+	
+Keys:
+	db	'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P', 0x0a
+	
+    
 psect	uart_code,class=CODE
 
     
@@ -46,7 +53,7 @@ keyboard_start: ; press and hold button
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
     nop
-    movlw 500
+    movlw 1
     call  LCD_delay_ms	    ;DELAY!!!!!!
     movf PORTE, W, A
     movwf row_byte, A		; move data on w to Port D
@@ -55,7 +62,7 @@ keyboard_start: ; press and hold button
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
     nop
-    movlw 500
+    movlw 1
     call  LCD_delay_ms      ;DELAY!!!! 
     movf PORTE, W, A
     movwf column_byte, A	    ; move data on w to Port C
@@ -82,6 +89,11 @@ Recombine:
     ; and it with 0xF0 for the upper 4 bits
     return
 
+Decode:
+    
+    
+    
+    
 ; ** a few delay routines below here as LCD timing can be quite critical **** from LCD.s
 LCD_delay_ms:		    ; delay given in ms in W
 	movwf	LCD_cnt_ms, A
