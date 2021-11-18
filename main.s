@@ -21,7 +21,7 @@ setup:
 	; ******* Main programme ****************************************
 start: 	
 	call keyboard_start
-	call Recombine
+	call Recombine  
 	goto start
 	
 end start
