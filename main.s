@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-extrn	keyboard_setup, keyboard_start, Recombine  ; external subroutines
+extrn	keyboard_setup, keyboard_start, Recombine, Decode_set_up  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	 
 
@@ -16,6 +16,7 @@ setup:
 	; clears port E 
 	; makes B and C outputs 
 	call	keyboard_setup	; setup keyboard
+	call	Decode_set_up
 	goto	start
 	
 	; ******* Main programme ****************************************
