@@ -9,13 +9,19 @@ LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
 row_byte:       ds 1   ; reserve 1 byte for row byte
 column_byte:    ds 1   ; reserve 1 byte for column byte
-key_byte:       ds 1   ; reserve 1 byte for combined row and column    
+key_byte:       ds 1   ; reserve 1 byte for combined row and column   
+counter:	ds 1   ; reserve 1 byte for a counter variable
 
+psect	udata_bank4
+myArray:    ds	0x80	; reserves 128 bytes for message data
+    
 psect	data
 	
 Keys:
 	db	'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P', 0x0a
 	
+	Keys_1	EQU 16
+	align 2
     
 psect	uart_code,class=CODE
 
@@ -83,18 +89,87 @@ Recombine:
     movwf   key_byte, A
     movff   key_byte, PORTH
 
-    
     ;read the whole 8 bits
     ; and it with 0x0F for the lower 4 bits
     ; and it with 0xF0 for the upper 4 bits
     return
+    
+Decode:	
+    BTFSC   key_byte, 7, 0	;tests the 7th bit and if it is 0 it skips the next line
+    call    Decode_7    
+    
+    BTFSC   key_byte, 6, 0	;tests the 6th bit and if it is 0 it skips the next line
+    call    Decode_6
+    
+    BTFSC   key_byte, 5, 0	;tests the 5th bit and if it is 0 it skips the next line
+    call    Decode_5
+    
+    BTFSC   key_byte, 4, 0	;tests the 4th bit and if it is 0 it skips the next line
+    call    Decode_4
+    
+Decode_7:
+    BTFSC   key_byte, 3,0	;tests the 3rd bit, if 0 it skips
+    call    write_A
+    
+    BTFSC   key_byte, 2,0
+    call    write_E
 
-Decode:
+    BTFSC   key_byte, 1,0
+    call    write_I
     
+    BTFSC   key_byte, 0,0
+    call    write_M
     
+Decode_6:
+    BTFSC   key_byte, 3,0
+    call    write_B
     
+    BTFSC   key_byte, 2,0
+    call    write_F
+
+    BTFSC   key_byte, 1,0
+    call    write_J
     
-; ** a few delay routines below here as LCD timing can be quite critical **** from LCD.s
+    BTFSC   key_byte, 0,0
+    call    write_N
+    
+Decode_5:
+    
+    BTFSC   key_byte, 3,0
+    call    write_C
+    
+    BTFSC   key_byte, 2,0
+    call    write_G
+
+    BTFSC   key_byte, 1,0
+    call    write_K
+    
+    BTFSC   key_byte, 0,0
+    call    write_O
+    
+Decode_4:
+    
+    BTFSC   key_byte, 3,0
+    call    write_D
+    
+    BTFSC   key_byte, 2,0
+    call    write_H
+
+    BTFSC   key_byte, 1,0
+    call    write_L
+    
+    BTFSC   key_byte, 0,0
+    call    write_P
+    
+write_A:
+    lfsr    0,myArray
+    movlw   lowhighword(Keys)
+    movwf   TBLPTRU, A
+    movlw   low(Keys)	; address of data in PM
+    movwf   TBLPTRL, A		; load low byte to TBLPTRL
+    movlw   myTable_l	; bytes to read
+    movwf   counter, A		; our counter register
+    
 LCD_delay_ms:		    ; delay given in ms in W
 	movwf	LCD_cnt_ms, A
 
