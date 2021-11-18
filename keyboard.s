@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global  keyboard_setup, keyboard_start, Recombine
+global  keyboard_setup, keyboard_start, Recombine, Decode_set_up
     
 psect	udata_acs   ; reserve data space in access ram
 keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
@@ -94,6 +94,25 @@ Recombine:
     ; and it with 0xF0 for the upper 4 bits
     return
     
+Decode_set_up:
+
+	bcf	CFGS	; point to Flash program memory  
+	bsf	EEPGD 	; access Flash program memory
+	call	UART_Setup	; setup UART
+	call	LCD_Setup	; setup UART
+	goto	start
+	 	
+	lfsr	0, myArray	; Load FSR0 with address in RAM	
+	movlw	low highword(Keys)	; address of data in PM
+	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
+	movlw	high(Keys)	; address of data in PM
+	movwf	TBLPTRH, A		; load high byte to TBLPTRH
+	movlw	low(Keys)	; address of data in PM
+	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+	movlw	Keys_l	; bytes to read
+	movwf 	counter, A		; our counter register 
+
+
 Decode:	
     BTFSC   key_byte, 7, 0	;tests the 7th bit and if it is 0 it skips the next line
     call    Decode_7    
