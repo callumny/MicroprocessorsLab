@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-extrn	keyboard_setup, keyboard_start  ; external subroutines
+extrn	keyboard_setup, keyboard_start, Recombine  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	 
 
@@ -21,6 +21,7 @@ setup:
 	; ******* Main programme ****************************************
 start: 	
 	call keyboard_start
+	call Recombine
 	goto setup
 	
 end start
