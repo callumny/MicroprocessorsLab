@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global  keyboard_setup, keyboard_start
+global  keyboard_setup, keyboard_start, Recombine
 
 psect	udata_acs   ; reserve data space in access ram
 keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
@@ -18,63 +18,69 @@ keyboard_setup:
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
     
-    movlw 0x00
-    clrf LATD, A
-    movwf LATD, A
-    clrf LATC, A
-    movwf LATC, A
-    clrf LATH, A
-    movwf LATH, A
+    ;clrf LATD, A
+    ;clrf LATC, A
+    ;clrf LATH, A
+    clrf PORTE, A
+    clrf PORTD, A
+    clrf PORTC, A
     clrf LATE, A ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
-    movlw 0x00
-    movwf TRISD, A
-    movwf TRISC, A
-    movwf TRISH, A
     
-    
+    return
 ; D should be at adress less than C, rows than columns DDDDCCCC 
     ; D at 0x06, C at 0x07
-    
     
 keyboard_start: ; press and hold button 
     ;Finding Rows
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
-    
-    ;movlw   0x05		;DELAY
-    ;call LCD_delay_ms
+    nop
+    ;call    lcdlp2	    ; calls a 1ms delay after setting the Tristate to allow voltage pins to settle
     
     movf PORTE, W, A
-    movwf 0x06, A		; move data on w to adress 0x06 
+    movwf 0x06, A		; move data on w to Port D
     
-    ;movlw   0x05		;DELAY
-    ;call LCD_delay_ms
-   
-    ;Finding Columns    
+    ;Finding Columns  
+    
+    clrf PORTE, A
+    
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
     
-    ;movlw   0x05		;5ms delay
-    ;call LCD_delay_ms
-    
+    ;call    lcdlp2	    ;call a 1ms delay to allow voltage to stabilize
+    nop
     movf PORTE, W, A
-    movwf 0x07, A ; move data on w to port C 
+    ;call lcdlp2
+    movwf 0x07, A	    ; move data on w to Port C
     
-    ;movlw   0x05		;5ms delay
-    ;call LCD_delay_ms
-  
+    return
+    
+Recombine:
     ; Combininng data on port C and D to one byte
+    
     movf    0x06, W, A ; displyaing row nibble
     movwf   PORTD, A
+    
+    movlw   0x00
+    movwf   TRISD, A	    ;set port D to outputs
+    ;call    lcdlp2	    ;calls a 1ms delay to allow voltage to stabilize
+    nop
     movf    0x07, W, A ; displaying coloumn nibble
-    movwf   PORTC, A
-    
+    movwf   PORTC, A	    ;moves the coloumn nibble to PORTC
+
+    movlw   0x00
+    movwf   TRISC, A	    ;set port C to outputs
+    ;call    lcdlp2	    ;calls a 1ms delay to allow voltage to stabilize
+
     movf    0x06, W, A
-    iorwf   0x07, W, A
-    movwf   PORTH, A
+    iorwf   0x07, 0, 0	    ;compares the contents of 0x06
     
-    ;movlw   0x05		;DELAY
-    ;call LCD_delay_ms
+    movwf   PORTH, A
+    movlw   0x00
+    movwf   TRISH, A
+    
+    movlw   0x20
+    ;call    LCD_delay_ms
     
     ;read the whole 8 bits
     ; and it with 0x0F for the lower 4 bits
