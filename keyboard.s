@@ -7,8 +7,9 @@ keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
-    
-    
+row_byte:       ds 1   ; reserve 1 byte for row byte
+column_byte:    ds 1   ; reserve 1 byte for column byte
+key_byte:       ds 1   ; reserve 1 byte for combined row and column    
 psect	uart_code,class=CODE
 
     
@@ -35,51 +36,45 @@ keyboard_setup:
 ; D should be at adress less than C, rows than columns DDDDCCCC 
     ; D at 0x06, C at 0x07
     
-keyboard_start: ; press and hold button 
-    ;Finding Rows
+keyboard_start: ; press and hold button
     
     movlw   0x00
-    movwf   0x06,A
-    movwf   0x07,A	    ;clears the 0x06 and 0x07
+    movwf   row_byte , A
+    movwf   column_byte, A	    ;clears the 0x06 and 0x07
     
+    ;Finding Rows
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
     nop
-    ;movlw 0x01
-    ;call  LCD_delay_ms	    ; DELAY!!!!!!
-    
+    movlw 500
+    call  LCD_delay_ms	    ;DELAY!!!!!!
     movf PORTE, W, A
-    movwf 0x06, A		; move data on w to Port D
+    movwf row_byte, A		; move data on w to Port D
     
     ;Finding Columns  
-    
-    clrf PORTE, A
-    
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
-    
-    ;movlw 0x01
-    ;call  LCD_delay_ms    ;DELAY!!!!
     nop
+    movlw 500
+    call  LCD_delay_ms      ;DELAY!!!! 
     movf PORTE, W, A
-    movwf 0x07, A	    ; move data on w to Port C
+    movwf column_byte, A	    ; move data on w to Port C
     
     return
     
 Recombine:
     ; Combininng data on port C and D to one byte
     
-    movf    0x06, W, A ; displyaing row nibble
+    movf    row_byte, W, A ; displyaing row nibble
     movwf   PORTD, A
     
-    nop
-    movf    0x07, W, A ; displaying coloumn nibble
+    movf    column_byte, W, A ; displaying coloumn nibble
     movwf   PORTC, A	    ;moves the coloumn nibble to PORTC
     
-    movf    0x06, W, A
-    iorwf   0x07, 0, 0	    ;compares the contents of 0x06
-    
-    movwf   PORTH, A
+    movf    row_byte, W, A
+    iorwf   column_byte, 0, 0	    ;compares the contents of 0x06
+    movwf   key_byte, A
+    movff   key_byte, PORTH
 
     
     ;read the whole 8 bits
@@ -118,8 +113,6 @@ lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
 	
     
 end    
-
-
 
 
 
