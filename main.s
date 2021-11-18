@@ -22,6 +22,11 @@ setup:
 start: 	
 	call keyboard_start
 	call Recombine  
+	
+	;call
+	
+	
+	
 	goto start
 	
 end start
