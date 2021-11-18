@@ -22,7 +22,7 @@ setup:
 start: 	
 	call keyboard_start
 	call Recombine
-	goto setup
+	goto start
 	
 end start
  
