@@ -79,7 +79,7 @@ Recombine:
     movlw   0x00
     movwf   TRISH, A
     
-    movlw   0x20
+    ;movlw   0x20
     ;call    LCD_delay_ms
     
     ;read the whole 8 bits
