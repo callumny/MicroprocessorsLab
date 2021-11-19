@@ -1,86 +1,46 @@
 #include <xc.inc>
     
-global  keyboard_setup, keyboard_start, Recombine
+    
+extrn LCD_Write_Message
+    
+global  keyboard_setup, keyboard_start, Recombine, Invert, Reset_bit_counter, Keys_setup,Index_row, Index_column, Add_index,Print
+    
+psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
+myArray:    ds 0x80 ; reserve 128 bytes for message data
+
+psect	data    
+	; ******* myTable, data in programme memory, and its length *****
+myTable:	
+	db	'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'
+	myTable_l   EQU	16	; length of data
+	align	2
     
 psect	udata_acs   ; reserve data space in access ram
 keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
-LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
-row_byte:       ds 1   ; reserve 1 byte for row byte
-column_byte:    ds 1   ; reserve 1 byte for column byte
-key_byte:       ds 1   ; reserve 1 byte for combined row and column    
+LCD_cnt_ms:	    ds 1   ; reserve 1 byte for ms counter
+row_byte:	    ds 1   ; reserve 1 byte for row byte
+column_byte:	    ds 1   ; reserve 1 byte for column byte
+key_byte:	    ds 1   ; reserve 1 byte for combined row and column  
 
-A_byte:		ds 1
-B_byte:		ds 1
-C_byte:		ds 1
-D_byte:		ds 1
-E_byte:		ds 1
-F_byte:		ds 1
-G_byte:		ds 1
-H_byte:		ds 1
-I_byte:		ds 1
-J_byte:		ds 1
-K_byte:		ds 1
-L_byte:		ds 1
-M_byte:		ds 1
-N_byte:		ds 1
-O_byte:		ds 1
-P_byte:		ds 1
+column_index:	    ds  1	    ; reserves 1 byte for the column index i
+row_index:	    ds  1	    ; reserves 1 byte for the row index j
+invert_byte:	    ds  1	    ; reserves 1 byte for the number 11111111
+location_column:    ds	1	; reserves 1 byte for the location of the column data
+location_row:	    ds	1	; reserves 1 byte for the location of the row data
+index_counter:	    ds	1
+bit:	    ds	1   ; reserves a bit for the bit ocunter
+index_final:	ds  1 ; reserves a bit for the final index
 
-    
-    
-    
+
+        
 psect	uart_code,class=CODE
-
+   
 keys_setup:
-    movf    01110111		;moves the value shown on the keyboard for the letter A to A_byte
-    movwf   A_byte,A
-    
-    movf    10110111
-    movwf   B_byte,A
-    
-    movf    11010111
-    movwf   C_byte,A
-    
-    movf    11100111
-    movwf   D_byte,A
-    
-    movf    01111011
-    movwf   E_byte,A
-     
-    movf    10111011
-    movwf   F_byte,A
-    
-    movf    11011011
-    movwf   G_byte,A
-    
-    movf    11101011
-    movwf   H_byte,A
-    
-    movf    01111101
-    movwf   I_byte,A
-     
-    movf    10111101
-    movwf   J_byte,A
-    
-    movf    11011101
-    movwf   K_byte,A
-    
-    movf    11101101
-    movwf   L_byte,A
-    
-    movf    01111110
-    movwf   M_byte,A
-     
-    movf    10111110
-    movwf   N_byte,A
-    
-    movf    11011110
-    movwf   O_byte,A
-    
-    movf    11101110
-    movwf   P_byte,A
+
+    movf    11111111, W,A
+    movwf   invert_byte,A
     
     return
     
@@ -89,6 +49,7 @@ keyboard_setup:
     banksel	PADCFG1
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
+
     
     clrf LATD, A
     clrf LATC, A
@@ -102,6 +63,8 @@ keyboard_setup:
     movwf   TRISD,A
     movwf   TRISC,A
     movwf   TRISH,A
+    
+   
        
     return
 ; D should be at adress less than C, rows than columns DDDDCCCC 
@@ -153,13 +116,99 @@ Recombine:
     ; and it with 0xF0 for the upper 4 bits
     return
 
-Decode:
-    movf    keybyte, W, A
-    subwf   A_byte, 1
-    movlw 0
-    cpfseq  A_byte, A
-    skips this line
-    movlw 1
+Invert:
+    movf    key_byte, W , A		    ;puts the result from the keypad in the w register
+    subwf   invert_byte, A	    ;subtracts W repositry from 11111111 to create 0s everywhere apart from 1s at the points of interest and puts it back in the w repositry
+    movwf   key_byte, A		    ;puts the new inverted form back into the key_byte slot
+  
+    movf    key_byte, W, A	    ;moves key_byte back into W repositry (just in case W was empty after moving the data out of it)
+    andlw   0xF0		    ; this gets the inverted column nibble (01000000 for example)
+    movwf   location_column,A	    ; moves the value from the W repositry into location column which now holds the address of the index
+    
+    movf    key_byte, W, A	    ; moves the key_byte back into w repositry 
+    andlw   0x0F		    ; inverts the row nibble
+    movwf   location_row,A	    ; moves the value of the W repositry into location row, now holds address of the index
+    swapf   location_row,A	    ; flips the nibbles and puts them back into location_row
+    
+    ;now have location_row and location_column in the form 0000 XXXX so the interesting bit is the least significant
+
+    return
+
+Reset_bit_counter: ;must call on this before calling an index function
+    movf    3, W,A
+    movwf   bit,A			    ; set the counter to start from 4, the most signficiant bit of the lower nibble
+    return
+    
+Index_row:   
+    btfss   location_row, bit, 0	    ;checks the Nth bit, if it is zero it skips the next line
+    movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
+    dcfsnz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
+    goto    Index_row			    ;loops back again on a different bit
+    
+    movf    3,W,A			    ;puts a 4 in the W register
+    subwf   row_index,1,0		    ; does 4-row_index to get the actual index of the bit back into column index
+    
+    return
+    
+Index_column:
+
+    btfss   location_column, bit, 0	    ;checks the Nth bit, if it is zero it skips the next line
+    movff   bit, column_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
+    dcfsnz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
+    goto    Index_column		    ;loops back again on a different bit
+    
+    movf    3,W,A			    ;puts a 4 in the W register
+    subwf   column_index,1,0		    ; does 4-row_index to get the actual index of the bit back into column_index
+    
+    return
+    
+Add_index: ;column_index +4*row_index
+    
+    movf    row_index, W, A	    ;move row value to w rep
+    addwf   row_index, W, A	    ;add row value
+    addwf   row_index, W, A	    
+    addwf   row_index, W, A
+    
+    addwf   column_index,A	    ;add column index
+    movwf   index_final, A	    ;move to index_final
+    
+    return
+    
+Print:
+; read the corresponding value
+	lfsr	0, myArray	; Load FSR0 with address in RAM	
+	movlw	low highword(myTable)	; address of data in PM
+	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
+	movlw	high(myTable)	; address of data in PM
+	movwf	TBLPTRH, A		; load high byte to TBLPTRH
+	movlw	low(myTable)	; address of data in PM
+	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+	
+	movf	index_final, A
+	addwfc	TBLPTRL, A
+	movwf	TBLPTRL, A
+	
+	movlw	1
+	lfsr	2, myArray
+	call	LCD_Write_Message
+	
+	return
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
     
     
     
