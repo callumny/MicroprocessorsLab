@@ -11,14 +11,78 @@ row_byte:       ds 1   ; reserve 1 byte for row byte
 column_byte:    ds 1   ; reserve 1 byte for column byte
 key_byte:       ds 1   ; reserve 1 byte for combined row and column    
 
-psect	data
-	
-Keys:
-	db	'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P', 0x0a
-	
+A_byte:		ds 1
+B_byte:		ds 1
+C_byte:		ds 1
+D_byte:		ds 1
+E_byte:		ds 1
+F_byte:		ds 1
+G_byte:		ds 1
+H_byte:		ds 1
+I_byte:		ds 1
+J_byte:		ds 1
+K_byte:		ds 1
+L_byte:		ds 1
+M_byte:		ds 1
+N_byte:		ds 1
+O_byte:		ds 1
+P_byte:		ds 1
+
+    
+    
     
 psect	uart_code,class=CODE
 
+keys_setup:
+    movf    01110111		;moves the value shown on the keyboard for the letter A to A_byte
+    movwf   A_byte,A
+    
+    movf    10110111
+    movwf   B_byte,A
+    
+    movf    11010111
+    movwf   C_byte,A
+    
+    movf    11100111
+    movwf   D_byte,A
+    
+    movf    01111011
+    movwf   E_byte,A
+     
+    movf    10111011
+    movwf   F_byte,A
+    
+    movf    11011011
+    movwf   G_byte,A
+    
+    movf    11101011
+    movwf   H_byte,A
+    
+    movf    01111101
+    movwf   I_byte,A
+     
+    movf    10111101
+    movwf   J_byte,A
+    
+    movf    11011101
+    movwf   K_byte,A
+    
+    movf    11101101
+    movwf   L_byte,A
+    
+    movf    01111110
+    movwf   M_byte,A
+     
+    movf    10111110
+    movwf   N_byte,A
+    
+    movf    11011110
+    movwf   O_byte,A
+    
+    movf    11101110
+    movwf   P_byte,A
+    
+    return
     
 keyboard_setup:
     
@@ -90,6 +154,12 @@ Recombine:
     return
 
 Decode:
+    movf    keybyte, W, A
+    subwf   A_byte, 1
+    movlw 0
+    cpfseq  A_byte, A
+    skips this line
+    movlw 1
     
     
     
