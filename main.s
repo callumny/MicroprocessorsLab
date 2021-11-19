@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-extrn	keyboard_setup, keyboard_start, Recombine  ; external subroutines
+extrn	keyboard_setup, keyboard_start, Recombine, Keys_setup, Invert, Reset_bit_counter, Index_row, Index_column, Add_index,Print  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	 
 
@@ -20,9 +20,17 @@ setup:
 	
 	; ******* Main programme ****************************************
 start: 	
-	;call keyboard_start
-	;call Recombine  
-	;goto start
+	call keyboard_start
+	call Recombine
+	call Keys_setup
+	call Invert
+	call Reset_bit_counter
+	call Index_row
+	call Reset_bit_counter
+	call Index_column
+	call Add_index
+	call Print
+	goto start
 	
 end start
  
