@@ -37,7 +37,7 @@ index_final:	ds  1 ; reserves a bit for the final index
         
 psect	uart_code,class=CODE
    
-keys_setup:
+Keys_setup:
 
     movf    11111111, W,A
     movwf   invert_byte,A
@@ -99,11 +99,11 @@ keyboard_start: ; press and hold button
 Recombine:
     ; Combininng data on port C and D to one byte
     
-    movf    row_byte, W, A ; displyaing row nibble
-    movwf   PORTD, A
+    ;movf    row_byte, W, A ; displyaing row nibble
+    ;movwf   PORTD, A
     
-    movf    column_byte, W, A ; displaying coloumn nibble
-    movwf   PORTC, A	    ;moves the coloumn nibble to PORTC
+    ;movf    column_byte, W, A ; displaying coloumn nibble
+    ;movwf   PORTC, A	    ;moves the coloumn nibble to PORTC
     
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares the contents of 0x06
@@ -130,23 +130,29 @@ Invert:
     movwf   location_row,A	    ; moves the value of the W repositry into location row, now holds address of the index
     swapf   location_row,A	    ; flips the nibbles and puts them back into location_row
     
+    movff   location_row, PORTC, A
+    movff   location_row, PORTD, A
+    
     ;now have location_row and location_column in the form 0000 XXXX so the interesting bit is the least significant
 
     return
 
 Reset_bit_counter: ;must call on this before calling an index function
-    movf    3, W,A
-    movwf   bit,A			    ; set the counter to start from 4, the most signficiant bit of the lower nibble
+    movlw   3
+    movwf   bit,A   ; set the counter to start from 4, the most signficiant bit of the lower nibble
+    movff   bit, PORTD, A
     return
     
 Index_row:   
     btfss   location_row, bit, 0	    ;checks the Nth bit, if it is zero it skips the next line
     movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
-    dcfsnz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
+    decfsz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
     goto    Index_row			    ;loops back again on a different bit
     
-    movf    3,W,A			    ;puts a 4 in the W register
-    subwf   row_index,1,0		    ; does 4-row_index to get the actual index of the bit back into column index
+    movff   row_index, PORTC, A
+    movlw   3			    ;puts a 4 in the W register
+    subwf   row_index,1,0	    ; does 4-row_index to get the actual index of the bit back into column index
+    movff   row_index, PORTC, A
     
     return
     
@@ -172,6 +178,12 @@ Add_index: ;column_index +4*row_index
     addwf   column_index,A	    ;add column index
     movwf   index_final, A	    ;move to index_final
     
+    movf    0x00, A		    ;moves 0x00 to W reg
+    movwf   TRISF, A
+    
+    movf    index_final, A	    ;moves index_final to W reg
+    movwf   PORTF, A		    ;moves index_final to J
+    
     return
     
 Print:
@@ -194,6 +206,7 @@ Print:
 	
 	return
     
+
     
     
     
