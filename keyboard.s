@@ -1,9 +1,9 @@
 #include <xc.inc>
     
     
-extrn LCD_Write_Message
+extrn LCD_Write_Message, start
     
-global  keyboard_setup, keyboard_start, Recombine, Invert, Reset_bit_counter, Keys_setup,Index_row, Index_column, Add_index,Print
+global  keyboard_setup, keyboard_start, Recombine, Invert, Reset_bit_counter, Keys_setup, Zero_check,Index_row, Index_column, Add_index,Print
     
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -39,7 +39,7 @@ psect	uart_code,class=CODE
    
 Keys_setup:
 
-    movf    11111111, W,A
+    movlw    0xFF
     movwf   invert_byte,A
     
     return
@@ -54,6 +54,7 @@ keyboard_setup:
     clrf LATD, A
     clrf LATC, A
     clrf LATH, A
+    clrf LATF, A
     ;clrf PORTE, A
     ;clrf PORTD, A
     ;clrf PORTC, A
@@ -63,6 +64,7 @@ keyboard_setup:
     movwf   TRISD,A
     movwf   TRISC,A
     movwf   TRISH,A
+    movwf   TRISF,A
     
    
        
@@ -82,8 +84,9 @@ keyboard_start: ; press and hold button
     nop
     movlw 1
     call  LCD_delay_ms	    ;DELAY!!!!!!
-    movf PORTE, W, A
-    movwf row_byte, A		; move data on w to Port D
+    nop
+    movf PORTE, W, A		; move contents of port E to W register
+    movwf row_byte, A		; move data on w to row_byte
     
     ;Finding Columns  
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
@@ -91,8 +94,9 @@ keyboard_start: ; press and hold button
     nop
     movlw 1
     call  LCD_delay_ms      ;DELAY!!!! 
+    nop
     movf PORTE, W, A
-    movwf column_byte, A	    ; move data on w to Port C
+    movwf column_byte, A	    ; move data on w to column_byte
     
     return
     
@@ -115,23 +119,32 @@ Recombine:
     ; and it with 0x0F for the lower 4 bits
     ; and it with 0xF0 for the upper 4 bits
     return
-
+    
+Zero_check:
+    movlw   0xFF		;moves FF into the W repositry, the output that is asssociated with 
+    cpfseq  key_byte, A		; compares with the value of key_byte, if they are both 0xFF, i.e. no key has been presses then it skips the next line
+    return  
+    movwf   PORTD, A
+    goto    start		;  returns to the start to detect if a key has been pressed 
+    
 Invert:
     movf    key_byte, W , A		    ;puts the result from the keypad in the w register
-    subwf   invert_byte, A	    ;subtracts W repositry from 11111111 to create 0s everywhere apart from 1s at the points of interest and puts it back in the w repositry
-    movwf   key_byte, A		    ;puts the new inverted form back into the key_byte slot
-  
-    movf    key_byte, W, A	    ;moves key_byte back into W repositry (just in case W was empty after moving the data out of it)
-    andlw   0xF0		    ; this gets the inverted column nibble (01000000 for example)
-    movwf   location_column,A	    ; moves the value from the W repositry into location column which now holds the address of the index
+    subwf   invert_byte, A		    ;subtracts W repositry from 11111111 to create 0s everywhere apart from 1s at the points of interest and puts it back in invert_byte
+    movf    invert_byte, W, A		    ;puts the new invert_byte into the W repositry
+    ;movwf   PORTC, A
     
-    movf    key_byte, W, A	    ; moves the key_byte back into w repositry 
+    andlw   0xF0		    ; this gets the inverted column nibble (01000000 for example) and puts it back in W repositry
+    movwf   location_column,A	    ; moves the value from the W repositry into location column which now holds the address of the index
+    ;movwf   PORTC, A
+    
+    movf    invert_byte, W, A	    ; moves the key_byte back into w repositry 
     andlw   0x0F		    ; inverts the row nibble
     movwf   location_row,A	    ; moves the value of the W repositry into location row, now holds address of the index
-    swapf   location_row,A	    ; flips the nibbles and puts them back into location_row
+    movwf   PORTF, A
+    swapf   location_column,A	    ; flips the nibbles and puts them back into location_row
     
     movff   location_row, PORTC, A
-    movff   location_row, PORTD, A
+    movff   location_column, PORTD, A
     
     ;now have location_row and location_column in the form 0000 XXXX so the interesting bit is the least significant
 
@@ -139,19 +152,20 @@ Invert:
 
 Reset_bit_counter: ;must call on this before calling an index function
     movlw   3
-    movwf   bit,A   ; set the counter to start from 4, the most signficiant bit of the lower nibble
-    movff   bit, PORTD, A
+    movwf   bit,A   ; set the counter to start from 3, the most signficiant bit of the lower nibble
+    ;movff   bit, PORTD, A
     return
     
 Index_row:   
-    btfss   location_row, bit, 0	    ;checks the Nth bit, if it is zero it skips the next line
-    movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
+    btfss   location_row, bit, 0	    ;checks the Nth bit, if it is 1 it skips the next line
     decfsz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
     goto    Index_row			    ;loops back again on a different bit
     
-    movff   row_index, PORTC, A
-    movlw   3			    ;puts a 4 in the W register
-    subwf   row_index,1,0	    ; does 4-row_index to get the actual index of the bit back into column index
+    movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
+    
+    ;movff   row_index, PORTC, A
+    movlw   0x03			    ;puts a 3 in the W register
+    subwf   row_index, A	    ; does 4-row_index to get the actual index of the bit back into column index
     movff   row_index, PORTC, A
     
     return
