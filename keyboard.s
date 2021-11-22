@@ -155,7 +155,8 @@ Reset_bit_counter: ;must call on this before calling an index function
     movwf   bit,A   ; set the counter to start from 3, the most signficiant bit of the lower nibble
     ;movff   bit, PORTD, A
     return
- 
+
+    
 Loop_decrease:
     decfsz  bit, 1			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
     movff   bit, PORTF
