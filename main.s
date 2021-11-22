@@ -23,6 +23,7 @@ start:
 	call keyboard_start
 	call Recombine
 	call Keys_setup
+	;call something to check if it is a zero 
 	call Invert
 	call Reset_bit_counter
 	call Index_row
@@ -31,6 +32,6 @@ start:
 	call Add_index
 	call Print
 	goto start
-	
+		
 end start
  
