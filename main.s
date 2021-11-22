@@ -1,6 +1,7 @@
 #include <xc.inc>
 
-extrn	keyboard_setup, keyboard_start, Recombine, Keys_setup, Invert, Reset_bit_counter, Index_row, Index_column, Add_index,Print  ; external subroutines
+global	start
+extrn	keyboard_setup, keyboard_start, Recombine, Keys_setup, Zero_check, Invert, Reset_bit_counter, Index_row, Index_column, Add_index,Print  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	 
 
@@ -23,7 +24,7 @@ start:
 	call keyboard_start
 	call Recombine
 	call Keys_setup
-	;call something to check if it is a zero 
+	call Zero_check
 	call Invert
 	call Reset_bit_counter
 	call Index_row
