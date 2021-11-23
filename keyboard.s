@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Zero_check, Find_index, Place_index, Print, check_light, clear_check_light
+global  keyboard_setup, keyboard_start, Recombine, Find_index, Place_index, Print, check_light, clear_check_light, key_byte
     
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -101,21 +101,7 @@ Recombine:
     movff   key_byte, PORTH, A
 
     return
-    
-Zero_check:
-    ;clrf LATD, A
-    movlw   0xFF		;moves FF into the W repositry, the output that is asssociated with 
-    cpfseq  key_byte, A		; compares with the value of key_byte, if they are both 0xFF, i.e. no key has been presses then it skips the next line and goes back to start
-    return
-    ;movlw 0xAA
-    ;movwf PORTD, A
-    
-    movff key_byte, PORTD, A
-    
-    movlw 10
-    call  LCD_delay_ms  
-    goto  start		;  returns to the start to detect if a key has been pressed 
- 
+  
 clear_check_light:
     movlw 0x00
     movwf PORTC, A
@@ -242,6 +228,10 @@ P_check:
     
 Place_index:
     movwf   index_final,A
+    movff   index_final,PORTB, A
+    
+    movlw   10
+    call    LCD_delay_ms
     return
     
 Print:
