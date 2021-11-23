@@ -26,13 +26,7 @@ start:
 	call Recombine
 	call Keys_setup
 	;call Zero_check
-	call Invert
-	call Reset_bit_counter
-	call Index_row
-	call Reset_bit_counter
-	call Index_column
-	call Add_index
-	call Print
+
 	goto start
 		
 end start
