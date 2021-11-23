@@ -151,7 +151,7 @@ Invert:
     return
 
 Reset_bit_counter: ;must call on this before calling an index function
-    movlw   3
+    movlw   7
     movwf   bit,A   ; set the counter to start from 3, the most signficiant bit of the lower nibble
     ;movff   bit, PORTD, A
     return
