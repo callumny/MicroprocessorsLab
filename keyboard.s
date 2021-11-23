@@ -45,72 +45,70 @@ Keys_setup:
     return
     
 keyboard_setup:
-    
+    ;select the correct bank to work in
     banksel	PADCFG1
     bsf REPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
 
-    
+    ;clear the LAT registers (remembers position of pull up registers)
     clrf LATD, A
     clrf LATC, A
     clrf LATH, A
     clrf LATF, A
-    ;clrf PORTE, A
-    ;clrf PORTD, A
-    ;clrf PORTC, A
-    clrf LATE, A ; writes all 0's to LAT register - remembers outputs/position of pull up resistors on Port E
+    clrf LATB, A
+    clrf LATE, A ; 
     
+    ;set all the tristates to ouptuts
     movlw   0x00
+    movwf   TRISB,A
     movwf   TRISD,A
     movwf   TRISC,A
     movwf   TRISH,A
     movwf   TRISF,A
     
-   
-       
     return
-; D should be at adress less than C, rows than columns DDDDCCCC 
-    ; D at 0x06, C at 0x07
+
     
-keyboard_start: ; press and hold button
+keyboard_start:
     
+    ;clears the column byte
     movlw   0x00
     movwf   row_byte , A
-    movwf   column_byte, A	    ;clears the 0x06 and 0x07
+    movwf   column_byte, A	    
     
-    ;Finding Rows
+    ;Sets rows to be inputs
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
     nop
-    movlw 1
-    call  LCD_delay_ms	    ;DELAY!!!!!!
-    nop
-    movf PORTE, W, A		; move contents of port E to W register
-    movwf row_byte, A		; move data on w to row_byte
     
-    ;Finding Columns  
+    ;Call a delay to allow the TRIS voltage to settle
+    movlw 1
+    call  LCD_delay_ms	    
+    nop
+    
+    ;Read value from port and put it in row_byte
+    movff PORTE, row_byte, A		
+
+    ;Sets columns to be inputs 
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
     nop
+    
+    ;Call a delay to allow the TRIS voltage to settle
     movlw 1
-    call  LCD_delay_ms      ;DELAY!!!! 
+    call  LCD_delay_ms      
     nop
-    movf PORTE, W, A
-    movwf column_byte, A	    ; move data on w to column_byte
+    
+    ;Read value from port and put it in row_column
+    movff PORTE, column_byte, A
     
     return
     
 Recombine:
-    ; Combininng data on port C and D to one byte
-    
-    ;movf    row_byte, W, A ; displyaing row nibble
-    ;movwf   PORTD, A
-    
-    ;movf    column_byte, W, A ; displaying coloumn nibble
-    ;movwf   PORTC, A	    ;moves the coloumn nibble to PORTC
-    
+
+    ;Combines row and column into one byte containing all the information
     movf    row_byte, W, A
-    iorwf   column_byte, 0, 0	    ;compares the contents of 0x06
+    iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte, A
     movff   key_byte, PORTH
 
@@ -177,7 +175,8 @@ Loop_increase_2:
     
 Index_row:   
     
-    rrcf    location_row,A
+    rrcf    location_row,1,0
+    movff   location_row, PORTB
     btfss   STATUS, 0, A	    ;checks the Nth bit, if it is 1 it skips the next line
     call    Loop_increase_1
     movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
