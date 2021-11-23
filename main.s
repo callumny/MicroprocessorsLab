@@ -1,7 +1,7 @@
 #include <xc.inc>
 
-global	start
-extrn	keyboard_setup, keyboard_start, Recombine, Keys_setup, Zero_check, Invert, Reset_bit_counter, Index_row, Index_column, Add_index,Print, LCD_Setup  ; external subroutines
+global	start, setup
+extrn	keyboard_setup, keyboard_start, Recombine, Zero_check, Find_index,Place_index, LCD_Setup, check_light,clear_check_light  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	 
 
@@ -13,21 +13,21 @@ rst: 	org 0x0
 
 	; ******* Programme FLASH read Setup Code ***********************
 setup: 
-	; in the keyboard setup we select the correct bank register
-	; clears port E 
-	; makes B and C outputs 
 	call	keyboard_setup	; setup keyboard
-	call	LCD_Setup
+	;call	LCD_Setup
 	goto	start
 	
 	; ******* Main programme ****************************************
 start: 	
+	;call clear_check_light
 	call keyboard_start
 	call Recombine
-	call Keys_setup
 	;call Zero_check
-
+	;call check_light
+	;call Find_index
+	;call Place_index
+	;movwf PORTC, A
 	goto start
 		
-end start
+end 
  

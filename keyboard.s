@@ -1,9 +1,9 @@
 #include <xc.inc>
     
     
-extrn LCD_Write_Message, start, LCD_Send_Byte_D
+extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Invert, Reset_bit_counter, Keys_setup, Zero_check,Index_row, Index_column, Add_index,Print
+global  keyboard_setup, keyboard_start, Recombine, Zero_check, Find_index, Place_index, Print, check_light, clear_check_light
     
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -23,26 +23,9 @@ LCD_cnt_ms:	    ds 1   ; reserve 1 byte for ms counter
 row_byte:	    ds 1   ; reserve 1 byte for row byte
 column_byte:	    ds 1   ; reserve 1 byte for column byte
 key_byte:	    ds 1   ; reserve 1 byte for combined row and column  
-
-column_index:	    ds  1	    ; reserves 1 byte for the column index i
-row_index:	    ds  1	    ; reserves 1 byte for the row index j
-invert_byte:	    ds  1	    ; reserves 1 byte for the number 11111111
-location_column:    ds	1	; reserves 1 byte for the location of the column data
-location_row:	    ds	1	; reserves 1 byte for the location of the row data
-index_counter:	    ds	1
-bit:	    ds	1   ; reserves a bit for the bit ocunter
-index_final:	ds  1 ; reserves a bit for the final index
-
-
+index_final:	    ds	1   ;reserve 1 byte for final index value
         
 psect	uart_code,class=CODE
-   
-Keys_setup:
-
-    movlw    0xFF
-    movwf   invert_byte,A
-    
-    return
     
 keyboard_setup:
     ;select the correct bank to work in
@@ -82,7 +65,7 @@ keyboard_start:
     nop
     
     ;Call a delay to allow the TRIS voltage to settle
-    movlw 1
+    movlw 5
     call  LCD_delay_ms	    
     nop
     
@@ -95,7 +78,7 @@ keyboard_start:
     nop
     
     ;Call a delay to allow the TRIS voltage to settle
-    movlw 1
+    movlw 5
     call  LCD_delay_ms      
     nop
     
@@ -107,25 +90,159 @@ keyboard_start:
 Recombine:
 
     ;Combines row and column into one byte containing all the information
+    ;below two lines for debugging
+    movff   row_byte, PORTC,A
+    movff   column_byte, PORTD, A
+    
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte, A
-    movff   key_byte, PORTH
+    ;movwf   PORTH,A
+    movff   key_byte, PORTH, A
 
-    
-    ;read the whole 8 bits
-    ; and it with 0x0F for the lower 4 bits
-    ; and it with 0xF0 for the upper 4 bits
     return
     
 Zero_check:
+    ;clrf LATD, A
     movlw   0xFF		;moves FF into the W repositry, the output that is asssociated with 
-    cpfseq  key_byte, A		; compares with the value of key_byte, if they are both 0xFF, i.e. no key has been presses then it skips the next line
-    return  
-    movwf   PORTD, A
-    goto    start		;  returns to the start to detect if a key has been pressed 
+    cpfseq  key_byte, A		; compares with the value of key_byte, if they are both 0xFF, i.e. no key has been presses then it skips the next line and goes back to start
+    return
+    ;movlw 0xAA
+    ;movwf PORTD, A
     
+    movff key_byte, PORTD, A
+    
+    movlw 10
+    call  LCD_delay_ms  
+    goto  start		;  returns to the start to detect if a key has been pressed 
+ 
+clear_check_light:
+    movlw 0x00
+    movwf PORTC, A
+    ;return
+    
+check_light:
+    movlw 0xAA
+    movwf PORTC, A
+    return
+Find_index:    
+    movf key_byte, W, A
+    goto A_check
 
+    return
+    
+A_check: 
+    movlw   01110111
+    cpfseq  key_byte, A
+    goto B_check
+    movlw 0    ; index for A
+    return
+   
+B_check:
+    movlw   10110111
+    cpfseq  key_byte, A
+    goto C_check
+    movlw 1    ; index for B
+    return
+    
+C_check:
+    movlw   11010111
+    cpfseq  key_byte, A
+    goto D_check
+    movlw 2    ; index for C
+    return
+
+D_check:
+    movlw   11100111
+    cpfseq  key_byte, A
+    goto E_check
+    movlw 3    ; index for D
+    return
+    
+E_check:
+    movlw   01111011
+    cpfseq  key_byte, A
+    goto F_check
+    movlw 4    ; index for E
+    return
+    
+F_check:
+    movlw   10111011
+    cpfseq  key_byte, A
+    goto G_check
+    movlw 5    ; index for F
+    return
+ 
+G_check:
+    movlw   11011011
+    cpfseq  key_byte, A
+    goto H_check
+    movlw 6    ; index for G
+    return 
+    
+H_check:
+    movlw   11101011
+    cpfseq  key_byte, A
+    goto I_check
+    movlw 7    ; index for H
+    return     
+    
+I_check:
+    movlw   01111101
+    cpfseq  key_byte, A
+    goto J_check
+    movlw 8    ; index for I
+    return
+    
+J_check:
+    movlw   11011101
+    cpfseq  key_byte, A
+    goto K_check
+    movlw 9    ; index for J
+    return 
+    
+K_check:
+    movlw   11011101
+    cpfseq  key_byte, A
+    goto L_check
+    movlw 10    ; index for K
+    return 
+    
+L_check: 
+    movlw 11101101
+    cpfseq  key_byte, A
+    goto M_check
+    movlw 11    ; index for L
+    return 
+
+M_check:
+    movlw 01111101
+    cpfseq  key_byte, A
+    goto N_check
+    movlw 12    ; index for M
+    return 
+    
+N_check:
+    movlw 10111101
+    cpfseq  key_byte, A
+    goto O_check
+    movlw 13    ; index for N
+    return 
+
+O_check:
+    movlw 11011101
+    cpfseq  key_byte, A
+    goto P_check
+    movlw 14    ; index for 0
+    return 
+    
+P_check: 
+    movlw 15    ; index for P
+    return 
+    
+Place_index:
+    movwf   index_final,A
+    return
     
 Print:
 ; read the corresponding value
