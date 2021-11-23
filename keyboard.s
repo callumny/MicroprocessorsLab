@@ -1,7 +1,7 @@
 #include <xc.inc>
     
     
-extrn LCD_Write_Message, start
+extrn LCD_Write_Message, start, LCD_Send_Byte_D
     
 global  keyboard_setup, keyboard_start, Recombine, Invert, Reset_bit_counter, Keys_setup, Zero_check,Index_row, Index_column, Add_index,Print
     
@@ -150,42 +150,52 @@ Invert:
 
     return
 
+testing:
+    
+    
+    
+    
 Reset_bit_counter: ;must call on this before calling an index function
-    movlw   7
+    movlw   0
     movwf   bit,A   ; set the counter to start from 3, the most signficiant bit of the lower nibble
-    ;movff   bit, PORTD, A
+    movwf   PORTD, A
     return
 
     
-Loop_decrease:
-    decfsz  bit, 1			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
-    movff   bit, PORTF
+Loop_increase_1:
+    incf    bit, A				    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
+    movff   bit, PORTD
     goto    Index_row			    ;loops back again on a different bit
     return
     
+Loop_increase_2:
+    incf    bit, A				    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
+    movff   bit, PORTD
+    goto    Index_column			    ;loops back again on a different bit
+    return
+    
+    
 Index_row:   
-
-    btfss   location_row, bit, 0	    ;checks the Nth bit, if it is 1 it skips the next line
-    call    Loop_decrease
+    
+    rrcf    location_row,A
+    btfss   STATUS, 0, A	    ;checks the Nth bit, if it is 1 it skips the next line
+    call    Loop_increase_1
     movff   bit, row_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
     movff   bit, PORTD, A
     
-    ;movff   row_index, PORTC, A
-    movlw   3			    ;puts a 3 in the W register
-    subwf   row_index, A	    ; does 4-row_index to get the actual index of the bit back into column index
     movff   row_index, PORTC, A
     
     return
     
 Index_column:
 
-    btfss   location_column, bit, 0	    ;checks the Nth bit, if it is zero it skips the next line
+    rrcf    location_column,A
+    btfss   STATUS, 0, A	    ;checks the Nth bit, if it is 1 it skips the next line
+    call    Loop_increase_2
     movff   bit, column_index ,A		    ;if the bit is a 1 then the value of the bit address is put into the row_index which should be a number between 0-3
-    dcfsnz  bit, A			    ;if bit is a 0 then skips to this line, and decreases by 1, when this value is equal to zero it skips the next line
-    goto    Index_column		    ;loops back again on a different bit
+    movff   bit, PORTD, A
     
-    movf    3,W,A			    ;puts a 4 in the W register
-    subwf   column_index,1,0		    ; does 4-row_index to get the actual index of the bit back into column_index
+    movff   column_index, PORTC, A
     
     return
     
@@ -223,7 +233,7 @@ Print:
 	
 	movlw	1
 	lfsr	2, myArray
-	call	LCD_Write_Message
+	call	LCD_Send_Byte_D
 	
 	return
     
