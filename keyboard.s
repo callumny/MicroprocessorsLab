@@ -16,14 +16,13 @@ myTable:
 	align	2
     
 psect	udata_acs   ; reserve data space in access ram
-keyboard_counter: ds    1	    ; reserve 1 byte for variable keyboard_counter
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 LCD_cnt_ms:	    ds 1   ; reserve 1 byte for ms counter
 row_byte:	    ds 1   ; reserve 1 byte for row byte
 column_byte:	    ds 1   ; reserve 1 byte for column byte
 key_byte:	    ds 1   ; reserve 1 byte for combined row and column  
-index_final:	    ds	1   ;reserve 1 byte for final index value
+index:	            ds 1   ;reserve 1 byte for final index value
         
 psect	uart_code,class=CODE
     
@@ -62,32 +61,38 @@ keyboard_start:
     ;Sets rows to be inputs
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
-    nop
     
     ;Call a delay to allow the TRIS voltage to settle
     movlw 5
     call  LCD_delay_ms	    
-    nop
     
-    ; Drive output bits low all at once
+    ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTE, A
+    
     ;Read value from port and put it in row_byte
-    movff PORTE, row_byte, A		
+    movff PORTE, row_byte, A	
+    
+    
+    
+    
+    
+    
+    
+    
 
     ;Sets columns to be inputs 
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
-    nop
     
     ;Call a delay to allow the TRIS voltage to settle
     movlw 5
     call  LCD_delay_ms      
-    nop
     
-    ; Drive output bits low all at once
+    ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTE, A
+    
     ;Read value from port and put it in row_column
     movff PORTE, column_byte, A
     return
@@ -102,161 +107,20 @@ Recombine:
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte, A
-    ;movwf   PORTH,A
+    return
+    
+Display_key_byte:
     movff   key_byte, PORTH, A
-
     return
     
 Check_button_pressed:
-    ;check button is pressed by checking column
-    clrf PORTB, A
-    movlw 0xFF
-    cpfseq key_byte
-    return;call yes_button_pressed    ; show lights on port b if key has been pressed
-    goto start; call no_button_pressed    ; no lights on B when no key prssed
-    
-yes_button_pressed:
-    movlw 0xff
-    movwf PORTB, A
-    return
-    
-no_button_pressed: 
-    movlw 0x00
-    movwf PORTB, A
-    goto start
-    
-clear_check_light:
-    movlw 0x00
-    movwf PORTC, A
-    ;return
-    
-check_light:
-    movlw 0xAA
-    movwf PORTC, A
-    return
-    
-Find_index:    
-    ;movf key_byte, W, A
-    call A_check
-
-    return
-    
-A_check: 
-    movlw   01110111
-    cpfseq  key_byte, A
-    call B_check
-    movlw 0    ; index for A
-    return
-   
-B_check:
-    movlw   10110111
-    cpfseq  key_byte, A
-    call C_check
-    movlw 1    ; index for B
-    return
-    
-C_check:
-    movlw   11010111
-    cpfseq  key_byte, A
-    call D_check
-    movlw 2    ; index for C
-    return
-
-D_check:
-    movlw   11100111
-    cpfseq  key_byte, A
-    call E_check
-    movlw 3    ; index for D
-    return
-    
-E_check:
-    movlw   01111011
-    cpfseq  key_byte, A
-    call F_check
-    movlw 4    ; index for E
-    return
-    
-F_check:
-    movlw   10111011
-    cpfseq  key_byte, A
-    goto G_check
-    movlw 5    ; index for F
-    return
- 
-G_check:
-    movlw   11011011
-    cpfseq  key_byte, A
-    goto H_check
-    movlw 6    ; index for G
     return 
     
-H_check:
-    movlw   11101011
-    cpfseq  key_byte, A
-    goto I_check
-    movlw 7    ; index for H
-    return     
+Find_index:
     
-I_check:
-    movlw   01111101
-    cpfseq  key_byte, A
-    goto J_check
-    movlw 8    ; index for I
     return
-    
-J_check:
-    movlw   11011101
-    cpfseq  key_byte, A
-    goto K_check
-    movlw 9    ; index for J
-    return 
-    
-K_check:
-    movlw   11011101
-    cpfseq  key_byte, A
-    goto L_check
-    movlw 10    ; index for K
-    return 
-    
-L_check: 
-    movlw 11101101
-    cpfseq  key_byte, A
-    goto M_check
-    movlw 11    ; index for L
-    return 
-
-M_check:
-    movlw 01111101
-    cpfseq  key_byte, A
-    goto N_check
-    movlw 12    ; index for M
-    return 
-    
-N_check:
-    movlw 10111101
-    cpfseq  key_byte, A
-    goto O_check
-    movlw 13    ; index for N
-    return 
-
-O_check:
-    movlw 11011101
-    cpfseq  key_byte, A
-    goto P_check
-    movlw 14    ; index for 0
-    return 
-    
-P_check: 
-    movlw 15    ; index for P
-    return 
-    
-Place_index:
-    movwf   index_final,A
-    movff   index_final,PORTB, A
-   ; movlw   01101011
-    ;movwf   PORTB
-    movlw   10
-    call    LCD_delay_ms
+Display_index:
+    movff   index,PORTB, A
     return
     
 Print:
@@ -269,13 +133,13 @@ Print:
 	movlw	low(myTable)	; address of data in PM
 	movwf	TBLPTRL, A		; load low byte to TBLPTRL
 	
-	movf	index_final, A
+	movf	index, A
 	addwfc	TBLPTRL, A
 	movwf	TBLPTRL, A
 	
 	movlw	1
 	lfsr	2, myArray
-	call	LCD_Send_Byte_D
+	call	LCD_Write_Message 
 	
 	return
     
