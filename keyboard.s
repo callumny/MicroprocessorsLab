@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Find_index, Place_index, Print, check_light, clear_check_light, key_byte
+global  keyboard_setup, keyboard_start, Recombine, Find_index, Place_index, Print, check_light, clear_check_light, key_byte, Check_button_pressed
     
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -69,6 +69,9 @@ keyboard_start:
     call  LCD_delay_ms	    
     nop
     
+    ; Drive output bits low all at once
+    movlw	0x00
+    movwf	PORTE, A
     ;Read value from port and put it in row_byte
     movff PORTE, row_byte, A		
 
@@ -82,9 +85,11 @@ keyboard_start:
     call  LCD_delay_ms      
     nop
     
+    ; Drive output bits low all at once
+    movlw	0x00
+    movwf	PORTE, A
     ;Read value from port and put it in row_column
     movff PORTE, column_byte, A
-    
     return
     
 Recombine:
@@ -101,7 +106,25 @@ Recombine:
     movff   key_byte, PORTH, A
 
     return
-  
+    
+Check_button_pressed:
+    ;check button is pressed by checking column
+    clrf PORTB, A
+    movlw 0xFF
+    cpfseq key_byte
+    return;call yes_button_pressed    ; show lights on port b if key has been pressed
+    goto start; call no_button_pressed    ; no lights on B when no key prssed
+    
+yes_button_pressed:
+    movlw 0xff
+    movwf PORTB, A
+    return
+    
+no_button_pressed: 
+    movlw 0x00
+    movwf PORTB, A
+    goto start
+    
 clear_check_light:
     movlw 0x00
     movwf PORTC, A
@@ -111,44 +134,45 @@ check_light:
     movlw 0xAA
     movwf PORTC, A
     return
+    
 Find_index:    
-    movf key_byte, W, A
-    goto A_check
+    ;movf key_byte, W, A
+    call A_check
 
     return
     
 A_check: 
     movlw   01110111
     cpfseq  key_byte, A
-    goto B_check
+    call B_check
     movlw 0    ; index for A
     return
    
 B_check:
     movlw   10110111
     cpfseq  key_byte, A
-    goto C_check
+    call C_check
     movlw 1    ; index for B
     return
     
 C_check:
     movlw   11010111
     cpfseq  key_byte, A
-    goto D_check
+    call D_check
     movlw 2    ; index for C
     return
 
 D_check:
     movlw   11100111
     cpfseq  key_byte, A
-    goto E_check
+    call E_check
     movlw 3    ; index for D
     return
     
 E_check:
     movlw   01111011
     cpfseq  key_byte, A
-    goto F_check
+    call F_check
     movlw 4    ; index for E
     return
     
@@ -229,7 +253,8 @@ P_check:
 Place_index:
     movwf   index_final,A
     movff   index_final,PORTB, A
-    
+   ; movlw   01101011
+    ;movwf   PORTB
     movlw   10
     call    LCD_delay_ms
     return
