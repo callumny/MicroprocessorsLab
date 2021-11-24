@@ -3,8 +3,8 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Find_index, Place_index, Print, check_light, clear_check_light, key_byte, Check_button_pressed
-    
+global  keyboard_setup, keyboard_start, Recombine, Display_key_byte, Check_pressed, Find_index, Display_index, key_byte, Print  ; external subroutines
+
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
 
@@ -73,14 +73,6 @@ keyboard_start:
     ;Read value from port and put it in row_byte
     movff PORTE, row_byte, A	
     
-    
-    
-    
-    
-    
-    
-    
-
     ;Sets columns to be inputs 
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
     movwf TRISE, A
@@ -93,7 +85,7 @@ keyboard_start:
     movlw	0x00
     movwf	PORTE, A
     
-    ;Read value from port and put it in row_column
+    ;Read value from port and put it in column_byte
     movff PORTE, column_byte, A
     return
     
@@ -107,20 +99,26 @@ Recombine:
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte, A
+    
+    comf    key_byte, A
+    
+    
+    
     return
     
 Display_key_byte:
     movff   key_byte, PORTH, A
     return
     
-Check_button_pressed:
-    return 
-    
+Check_pressed:
+    movlw 0xFF
+    cpfseq key_byte
+    return ;yes button pressed
+    goto start ;no button pressed
 Find_index:
-    
     return
 Display_index:
-    movff   index,PORTB, A
+    ;movff   index,PORTB, A
     return
     
 Print:
