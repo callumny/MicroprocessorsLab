@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Display_key_byte,Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, Print  ; external subroutines
+global  keyboard_setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index  ; external subroutines
 
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -94,6 +94,14 @@ keyboard_start:
     movff PORTE, column_byte, A
     return
     
+Split_NOT_key_byte:
+    movff NOT_key_byte, NOT_key_byte_low
+    movlw 0x0f
+    andwf NOT_key_byte_low, 1,0
+    movff NOT_key_byte, NOT_key_byte_high
+    movlw 0xf0
+    andwf NOT_key_byte_high, 1,0	
+    return
 Recombine:
 
     ;Combines row and column into one byte containing all the information
@@ -112,7 +120,7 @@ Recombine:
 Display_key_byte:
     movff   key_byte, PORTH, A
     return
- Display_NOT_key_byte:
+Display_NOT_key_byte:
     movff   NOT_key_byte, PORTC, A
     return  
     
@@ -122,10 +130,129 @@ Check_pressed:
     cpfseq key_byte, A
     return ;yes button pressed
     goto start ;no button pressed
-Find_index:
-    return
+    
+Find_index:    
+    ;movf key_byte, W, A
+    bra A_check
+
+Found_index: ; exists as part
+    movwf index, A
+    return    
+
+A_check: 
+    movlw   01110111B
+    cpfseq  key_byte, A
+    bra B_check
+    movlw 0    ; index for A
+    goto Found_index
+    
+B_check:
+    movlw   10110111B
+    cpfseq  key_byte, A
+    bra C_check
+    movlw 1    ; index for B
+    goto Found_index
+    
+C_check:
+    movlw   11010111B
+    cpfseq  key_byte, A
+    bra D_check
+    movlw 2    ; index for C
+    goto Found_index
+
+D_check:
+    movlw   11100111B
+    cpfseq  key_byte, A
+    bra E_check
+    movlw 3    ; index for D
+    goto Found_index
+    
+E_check:
+    movlw   01111011B
+    cpfseq  key_byte, A
+    bra F_check
+    movlw 4    ; index for E
+    goto Found_index
+    
+F_check:
+    movlw   10111011B
+    cpfseq  key_byte, A
+    bra G_check
+    movlw 5    ; index for F
+    goto Found_index
+ 
+G_check:
+    movlw   11011011B
+    cpfseq  key_byte, A
+    bra H_check
+    movlw 6    ; index for G
+    goto Found_index 
+    
+H_check:
+    movlw   11101011B
+    cpfseq  key_byte, A
+    bra I_check
+    movlw 7    ; index for H
+    goto Found_index     
+    
+I_check:
+    movlw   01111101B
+    cpfseq  key_byte, A
+    bra J_check
+    movlw 8    ; index for I
+    goto Found_index
+    
+J_check:
+    movlw   11011101B
+    cpfseq  key_byte, A
+    bra K_check
+    movlw 9    ; index for J
+    goto Found_index 
+    
+K_check:
+    movlw   11011101B
+    cpfseq  key_byte, A
+    bra L_check
+    movlw 10    ; index for K
+    goto Found_index 
+    
+L_check: 
+    movlw 11101101B
+    cpfseq  key_byte, A
+    bra M_check
+    movlw 11    ; index for L
+    goto Found_index 
+
+M_check:
+    movlw 01111101B
+    cpfseq  key_byte, A
+    bra N_check
+    movlw 12    ; index for M
+    goto Found_index 
+    
+N_check:
+    movlw 10111101B
+    cpfseq  key_byte, A
+    bra O_check
+    movlw 13    ; index for N
+    goto Found_index 
+
+O_check:
+    movlw 11011101B
+    cpfseq  key_byte, A
+    bra P_check
+    movlw 14    ; index for 0
+    goto Found_index 
+    
+P_check: 
+    movlw 15    ; index for P
+    goto Found_index 
+
+
+    
+    
 Display_index:
-    ;movff   index,PORTB, A
+    movff   index, PORTC, A
     return
     
 Print:
