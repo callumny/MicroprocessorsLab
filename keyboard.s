@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Display_key_byte, Check_pressed, Find_index, Display_index, key_byte, Print  ; external subroutines
+global  keyboard_setup, keyboard_start, Recombine, Display_key_byte,Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, Print  ; external subroutines
 
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -22,8 +22,10 @@ LCD_cnt_ms:	    ds 1   ; reserve 1 byte for ms counter
 row_byte:	    ds 1   ; reserve 1 byte for row byte
 column_byte:	    ds 1   ; reserve 1 byte for column byte
 key_byte:	    ds 1   ; reserve 1 byte for combined row and column  
+NOT_key_byte:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed
 index:	            ds 1   ;reserve 1 byte for final index value
-        
+NOT_key_byte_low:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed	
+NOT_key_byte_high:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed        
 psect	uart_code,class=CODE
     
 keyboard_setup:
@@ -63,8 +65,10 @@ keyboard_start:
     movwf TRISE, A
     
     ;Call a delay to allow the TRIS voltage to settle
-    movlw 5
-    call  LCD_delay_ms	    
+    movlw	10		; wait 40us
+    call	LCD_delay_x4us
+    ;movlw 5
+    ;call  LCD_delay_ms	    
     
     ;Drive output bits low all at once
     movlw	0x00
@@ -78,9 +82,10 @@ keyboard_start:
     movwf TRISE, A
     
     ;Call a delay to allow the TRIS voltage to settle
-    movlw 5
-    call  LCD_delay_ms      
-    
+    movlw	10		; wait 40us
+    call	LCD_delay_x4us
+    ;movlw 5
+    ;call  LCD_delay_ms	    
     ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTE, A
@@ -93,26 +98,28 @@ Recombine:
 
     ;Combines row and column into one byte containing all the information
     ;below two lines for debugging
-    movff   row_byte, PORTC,A
+    ;movff   row_byte, PORTC,A
     movff   column_byte, PORTD, A
     
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte, A
     
-    comf    key_byte, A
-    
-    
-    
+    comf    key_byte, 0, 0          ; NOTS the key_byte and puts in wreg(for some reason need to do 0,0 instead of A, A,)
+    movwf   NOT_key_byte, A         ; NOTS the keybyte, useful for checking if button is pressed
     return
     
 Display_key_byte:
     movff   key_byte, PORTH, A
     return
+ Display_NOT_key_byte:
+    movff   NOT_key_byte, PORTC, A
+    return  
+    
     
 Check_pressed:
     movlw 0xFF
-    cpfseq key_byte
+    cpfseq key_byte, A
     return ;yes button pressed
     goto start ;no button pressed
 Find_index:
