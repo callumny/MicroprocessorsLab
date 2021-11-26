@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index  ; external subroutines
+global  keyboard_setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index, zero_byte, invalid_index  ; external subroutines
 
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -14,6 +14,7 @@ myTable:
 	db	'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'
 	myTable_l   EQU	16	; length of data
 	align	2
+	
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -25,13 +26,15 @@ key_byte:	    ds 1   ; reserve 1 byte for combined row and column
 NOT_key_byte:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed
 index:	            ds 1   ;reserve 1 byte for final index value
 NOT_key_byte_low:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed	
-NOT_key_byte_high:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed        
+NOT_key_byte_high:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed  
+zero_byte:          ds 1
+invalid_index:      ds 1
 psect	uart_code,class=CODE
     
 keyboard_setup:
     ;select the correct bank to work in
-    banksel	PADCFG1
-    bsf REPU ; bank select register - because PADCFG1 is not in access RAM
+    banksel	PADCFG1 ; bank select register - because PADCFG1 is not in access RAM
+    bsf REPU ; turns off all pullups on pins 
     banksel 0
 
     ;clear the LAT registers (remembers position of pull up registers)
@@ -50,15 +53,22 @@ keyboard_setup:
     movwf   TRISH,A
     movwf   TRISF,A
     
+    ; set zero_byte to 0x00 for comparisons
+    movlw 0x00
+    movwf zero_byte, A
+    
+    ; set invalid_index value
+    movlw 32
+    movwf invalid_index, A
     return
-
     
 keyboard_start:
     
     ;clears the column byte
     movlw   0x00
     movwf   row_byte , A
-    movwf   column_byte, A	    
+    movwf   column_byte, A
+    
     
     ;Sets rows to be inputs
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
@@ -75,7 +85,7 @@ keyboard_start:
     movwf	PORTE, A
     
     ;Read value from port and put it in row_byte
-    movff PORTE, row_byte, A	
+    movff PORTE, row_byte, A	 ;EtoD 
     
     ;Sets columns to be inputs 
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
@@ -91,7 +101,7 @@ keyboard_start:
     movwf	PORTE, A
     
     ;Read value from port and put it in column_byte
-    movff PORTE, column_byte, A
+    movff PORTE, column_byte, A 
     return
     
 Split_NOT_key_byte:
@@ -107,7 +117,7 @@ Recombine:
     ;Combines row and column into one byte containing all the information
     ;below two lines for debugging
     ;movff   row_byte, PORTC,A
-    movff   column_byte, PORTD, A
+    ;movff   column_byte, PORTD, A
     
     movf    row_byte, W, A
     iorwf   column_byte, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
@@ -120,16 +130,10 @@ Recombine:
 Display_key_byte:
     movff   key_byte, PORTH, A
     return
+    
 Display_NOT_key_byte:
     movff   NOT_key_byte, PORTC, A
     return  
-    
-    
-Check_pressed:
-    movlw 0xFF
-    cpfseq key_byte, A
-    return ;yes button pressed
-    goto start ;no button pressed
     
 Find_index:    
     ;movf key_byte, W, A
@@ -139,6 +143,16 @@ Found_index: ; exists as part
     movwf index, A
     return    
 
+Check_pressed:
+    call Split_NOT_key_byte
+    movlw 0x00
+    cpfsgt NOT_key_byte_low, A
+    retlw 0x00       ;goto start                      ; if all 00000000 i.e no button is pressed
+    cpfsgt NOT_key_byte_high, A
+    retlw 0x00;
+    movlw 0xff
+    return
+    
 A_check: 
     movlw   01110111B
     cpfseq  key_byte, A
@@ -203,7 +217,7 @@ I_check:
     goto Found_index
     
 J_check:
-    movlw   11011101B
+    movlw   10111101B
     cpfseq  key_byte, A
     bra K_check
     movlw 9    ; index for J
@@ -224,30 +238,36 @@ L_check:
     goto Found_index 
 
 M_check:
-    movlw 01111101B
+    movlw 01111110B
     cpfseq  key_byte, A
     bra N_check
     movlw 12    ; index for M
     goto Found_index 
     
 N_check:
-    movlw 10111101B
+    movlw 10111110B
     cpfseq  key_byte, A
     bra O_check
     movlw 13    ; index for N
     goto Found_index 
 
 O_check:
-    movlw 11011101B
+    movlw 11011110B
     cpfseq  key_byte, A
     bra P_check
     movlw 14    ; index for 0
     goto Found_index 
     
 P_check: 
+    movlw 11101110B
+    cpfseq  key_byte, A
+    bra Invalid_check
     movlw 15    ; index for P
     goto Found_index 
-
+    
+Invalid_check:
+    movf invalid_index, W, A
+    goto Found_index
 
     
     
