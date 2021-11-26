@@ -32,7 +32,7 @@ psect	uart_code,class=CODE
 keyboard_setup:
     ;select the correct bank to work in
     banksel	PADCFG1
-    bsf REPU ; bank select register - because PADCFG1 is not in access RAM
+    bsf RDPU ; bank select register - because PADCFG1 is not in access RAM
     banksel 0
 
     ;clear the LAT registers (remembers position of pull up registers)
@@ -47,6 +47,7 @@ keyboard_setup:
     movlw   0x00
     movwf   TRISB,A
     ;movwf   TRISD,A
+    movwf   TRISE,A
     movwf   TRISC,A
     movwf   TRISH,A
     movwf   TRISF,A
