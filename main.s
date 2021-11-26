@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 global	start, setup
-extrn	keyboard_setup, LCD_Setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index  ; external subroutines
+extrn	keyboard_setup, LCD_Setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index, zero_byte, invalid_index  ; external subroutines
 ;extrn	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -28,24 +28,18 @@ start:
 	movwf PORTH, A	;
 	movwf PORTC, A
 	call Recombine
+	;check if button is pressed
+	call Check_pressed   ; returns 0x00 in Wreg if no buton is pressed
+	cpfslt zero_byte, A
+	bra start            ; if no button is pressed
 	
-	; check if button is pressed
-	call Split_NOT_key_byte
-	movlw 0x00
-	cpfsgt NOT_key_byte_low, A
-	bra start                      ; if all 00000000 i.e no button is pressed
-	cpfsgt NOT_key_byte_high, A
-	bra start;
-
 	; continue given button is pressed
 	call Display_key_byte
 	call Find_index
 	call Display_index
-	
 	call Print
 	goto start ; call no_button_pressed    ; no lights on B when no key prssed
 
-check_column: 
     
 end start
  
