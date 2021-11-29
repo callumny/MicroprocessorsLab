@@ -14,18 +14,28 @@ rst: 	org 0x0
 
 setup: 
 	;;call	Two_keypad_setup	; setup keyboard
-	call    keyboard_setup_E
+	call    two_keyboard_setup
 	call	LCD_Setup
 	goto	start
 	
 	; ******* Main programme ****************************************
 start: 	
-	;;call two_keypad_start   ; identifies which pad is pressed and 
-	call keyboard_start_E
-	movlw 0x00
+        movlw 0x00
 	movwf PORTH, A	;
 	movwf PORTC, A
+	;;call two_keypad_start   ; identifies which pad is pressed and 
+	
+	call Keyboard_start_E
 	call Recombine_E
+	call Keyboard_start_D
+	call Recombine_D
+	
+	;check if button is pressed
+	call Check_pressed_E   ; returns 0x00 in Wreg if no buton is pressed
+	cpfslt zero_byte, A
+	bra start              ; if no button is pressed
+	
+	
 	;;call Recombine_D
 	
 	;;call Check_pressed_E
@@ -35,10 +45,14 @@ start:
 	
 	;check if button is pressed
 	call Check_pressed_E   ; returns 0x00 in Wreg if no buton is pressed
+	movf button_on_E_pressed
 	cpfslt zero_byte, A
-	bra start            ; if no button is pressed
+	call Check_pressed_D          ; if no button on E is pressed
+	; if button on E is pressed
 	
-	; continue given button is pressed
+	   
+	   
+	   ; continue given button is pressed
 	call Display_key_byte_E
 	;call Display_key_byte_D
 	
