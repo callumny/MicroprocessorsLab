@@ -30,8 +30,8 @@ start:
 	call Recombine
 	
 	;call Is_button_pressed
-	movf button_pressed
-	movwf PORTD
+	movf button_pressed, A
+	movwf PORTD, A
 	cpfslt zero_byte, A
 	bra start            ; if no button is pressed
 	
