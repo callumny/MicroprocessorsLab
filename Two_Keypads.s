@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup_E, keyboard_start_E, Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
+global    Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, keyboard_setup_E, keyboard_start_E, Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -23,6 +23,9 @@ NOT_key_byte_D:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for check
 index_D:	            ds 1   ;reserve 1 byte for final index value
 NOT_key_byte_low_D:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed	
 NOT_key_byte_high_D:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed  
+button_pressed_E: ds 1
+button_pressed_D: ds 1
+button_pressed_state: ds 1         ; reserve 1 byte for if E or D is pressed or both
 zero_byte:          ds 1
 invalid_index:      ds 1
 psect	uart_code,class=CODE
@@ -149,6 +152,22 @@ Check_pressed_E:
     retlw 0x00       ; no button pressed returns 0  
     movlw 0x0F
     return
+    
+    
+Is_button_E_pressed:
+    call Check_pressed_2_E
+    movwf button_pressed_E, A
+    return    ; returns to main
+    
+ Check_pressed_2_E:
+    call Split_NOT_key_byte_E
+    movlw 0x00
+    cpfsgt NOT_key_byte_low_E, A
+    retlw 0x00       ; no button pressed returns 0
+    cpfsgt NOT_key_byte_high_E, A
+    retlw 0x00       ; no button pressed returns 0  
+    movlw 0x0F
+    return  
     
 A_check: 
     movlw   01110111B
@@ -295,7 +314,7 @@ keyboard_start_D:
     movwf	PORTD, A
     
     ;Read value from port and put it in row_byte
-    movff PORTD, row_byte, A	 ;EtoD 
+    movff PORTD, row_byte_D, A	 ;EtoD 
     
     ;Sets columns to be inputs 
     movlw 0xF0			; 11110000 ; PORTE 4-7 (columns) are inputs and Port E 0-3 (rows) are outputs
@@ -362,6 +381,21 @@ Check_pressed_D:
     retlw 0x00       ; no button pressed returns 0  
     movlw 0xF0
     return   
+    
+Is_button_D_pressed:
+    call Check_pressed_2_D
+    movwf button_pressed_D, A
+    return    ; returns to main
+    
+Check_pressed_2_D:
+    call Split_NOT_key_byte_D
+    movlw 0x00
+    cpfsgt NOT_key_byte_low_D, A
+    retlw 0x00       ; no button pressed returns 0
+    cpfsgt NOT_key_byte_high_D, A
+    retlw 0x00       ; no button pressed returns 0  
+    movlw 0x0F
+    return  
     
 Q_check: 
     movlw   01110111B
@@ -485,8 +519,15 @@ Display_index_D:
 
         
     
+E_and_D_press_state:
+    movf button_E_pressed, A
+    addwf button_D_pressed, 0, 0 ; adds button_E_pressed to button_D_pressed, stores in W reg
+    movwf button_pressed_state, A
     
     
+Display_E_and_D_press_state:
+    movff button_pressed_state, PORTC, A
+    return
     
     
     
