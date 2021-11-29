@@ -3,7 +3,7 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global  keyboard_setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index, zero_byte, invalid_index  ; external subroutines
+global  Is_button_pressed, button_pressed, keyboard_setup, keyboard_start, Recombine, Split_NOT_key_byte, Display_key_byte, Display_NOT_key_byte, Check_pressed, Find_index, Display_index, key_byte, NOT_key_byte, NOT_key_byte_low, NOT_key_byte_high, Print, index, zero_byte, invalid_index  ; external subroutines
 
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 myArray:    ds 0x80 ; reserve 128 bytes for message data
@@ -29,6 +29,7 @@ NOT_key_byte_low:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for che
 NOT_key_byte_high:	    ds 1   ; reserve 1 byte for NOTTED keybyte, useful for checking if button pressed  
 zero_byte:          ds 1
 invalid_index:      ds 1
+button_pressed:      ds 1
 psect	uart_code,class=CODE
     
 keyboard_setup:
@@ -147,11 +148,28 @@ Check_pressed:
     call Split_NOT_key_byte
     movlw 0x00
     cpfsgt NOT_key_byte_low, A
-    retlw 0x00       ;goto start                      ; if all 00000000 i.e no button is pressed
+    retlw 0x00       ; no button pressed returns 0
     cpfsgt NOT_key_byte_high, A
-    retlw 0x00;
+    retlw 0x00       ; no button pressed returns 0  
     movlw 0xff
     return
+    
+Is_button_pressed:
+    call Check_pressed_2
+    movwf button_pressed, A
+    return    ; returns to main
+    
+ Check_pressed_2:
+    call Split_NOT_key_byte
+    movlw 0x00
+    cpfsgt NOT_key_byte_low, A
+    retlw 0x00       ; no button pressed returns 0
+    cpfsgt NOT_key_byte_high, A
+    retlw 0x00       ; no button pressed returns 0  
+    movlw 0xff
+    return  
+    
+    
     
 A_check: 
     movlw   01110111B
