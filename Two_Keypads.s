@@ -11,7 +11,11 @@ global    Two_keypad_setup, button_pressed_state, \
     Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D, Check_pressed_D,\
     Find_index_D, Display_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
     Display_E_press_state,  Display_D_press_state,\
-    zero_byte, invalid_index  ; external subroutines
+    button_pressed_state,\
+    Invalid_button_press,\
+    Display_two_keypad_index,\
+    zero_byte, FF_byte, invalid_index,\
+    index, Two_keypad_find_index; external subroutines
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -35,7 +39,10 @@ button_pressed_E: ds 1
 button_pressed_D: ds 1
 button_pressed_state: ds 1         ; reserve 1 byte for if E or D is pressed or both
 zero_byte:          ds 1
+FF_byte:            ds 1
+OF_byte:            ds 1
 invalid_index:      ds 1
+index:              ds 1
 psect	uart_code,class=CODE
     
 Two_keypad_setup:
@@ -66,11 +73,18 @@ Two_keypad_setup:
     movlw 0x00
     movwf zero_byte, A
     
+    ; set FF_byte to 0x00 for comparisons
+    movlw 0xFF
+    movwf FF_byte, A
+    
+    ; set 0F_byte to 0x00 for comparisons
+    movlw 0x0F
+    movwf OF_byte, A
     ; set button presses to none pressed initially
     movlw 0x00
-    movwf button_pressed_E
-    movwf button_pressed_D
-    movwf button_pressed_state
+    movwf button_pressed_E, A
+    movwf button_pressed_D, A
+    movwf button_pressed_state, A
     ; set invalid_index value
     movlw 0xff
     movwf invalid_index, A
@@ -554,7 +568,12 @@ Display_E_and_D_press_state:
     
     
     
-    
+Invalid_button_press:
+    movlw 0xAA
+    movwf PORTB, A
+    movlw 100
+    call LCD_delay_ms
+    return
 
     
     
@@ -592,8 +611,19 @@ lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
 	bc 	lcdlp1		; carry, then loop again
 	return			; carry reset so return
 
+
 	
-    
+	
+Two_keypad_find_index:
+    movf button_pressed_state, A
+    cpfseq OF_byte, A    ; skkip if only portE keypad is pressed
+    movff index_D, index ;port D is pressed
+    movff index_E, index ;port E is pressed
+    return
+ 
+Display_two_keypad_index:
+    movff index, PORTH, A
+    return
 end    
 
 
