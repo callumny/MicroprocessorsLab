@@ -3,7 +3,15 @@
     
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
     
-global    Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, keyboard_setup_E, keyboard_start_E, Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
+global    Two_keypad_setup, button_pressed_state, \
+    Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, \
+    Keypad_start_E, Keypad_start_D, \
+    Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E,\
+    Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
+    Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D, Check_pressed_D,\
+    Find_index_D, Display_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
+    Display_E_press_state,  Display_D_press_state,\
+    zero_byte, invalid_index  ; external subroutines
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -30,16 +38,18 @@ zero_byte:          ds 1
 invalid_index:      ds 1
 psect	uart_code,class=CODE
     
-two_keyboard_setup:
+Two_keypad_setup:
     ;select the correct bank to work in
     banksel	PADCFG1 ; bank select register - because PADCFG1 is not in access RAM
     bsf REPU ; turns off all pullups on pins 
+    bsf RDPU
     banksel 0
 
     ;clear the LAT registers (remembers position of pull up registers)
     clrf LATD, A
     clrf LATC, A
     clrf LATH, A
+    clrf LATJ, A
     clrf LATF, A
     clrf LATB, A
     clrf LATE, A ; 
@@ -50,11 +60,17 @@ two_keyboard_setup:
     movwf   TRISC,A
     movwf   TRISH,A
     movwf   TRISF,A
+    movwf   TRISJ,A
     
     ; set zero_byte to 0x00 for comparisons
     movlw 0x00
     movwf zero_byte, A
     
+    ; set button presses to none pressed initially
+    movlw 0x00
+    movwf button_pressed_E
+    movwf button_pressed_D
+    movwf button_pressed_state
     ; set invalid_index value
     movlw 0xff
     movwf invalid_index, A
@@ -62,7 +78,7 @@ two_keyboard_setup:
  
    
 ; ROUTINES FOR KEYPAD E
-keyboard_start_E:
+Keypad_start_E:
     
     ;clears the column byte
     movlw   0x00
@@ -159,7 +175,7 @@ Is_button_E_pressed:
     movwf button_pressed_E, A
     return    ; returns to main
     
- Check_pressed_2_E:
+Check_pressed_2_E:
     call Split_NOT_key_byte_E
     movlw 0x00
     cpfsgt NOT_key_byte_low_E, A
@@ -291,7 +307,7 @@ Display_index_E:
 
     
 ; ROUTINES FOR KEYPAD D
-keyboard_start_D:
+Keypad_start_D:
     
     ;clears the column byte
     movlw   0x00
@@ -357,7 +373,7 @@ Recombine_D:
     return
     
 Display_key_byte_D:
-    movff   key_byte_D, PORTH, A
+    movff   key_byte_D, PORTB, A
     return
     
 Display_NOT_key_byte_D:
@@ -394,7 +410,7 @@ Check_pressed_2_D:
     retlw 0x00       ; no button pressed returns 0
     cpfsgt NOT_key_byte_high_D, A
     retlw 0x00       ; no button pressed returns 0  
-    movlw 0x0F
+    movlw 0xF0
     return  
     
 Q_check: 
@@ -517,13 +533,20 @@ Display_index_D:
     movff   index_D, PORTC, A
     return
 
-        
+Display_E_press_state:
+    movff button_pressed_E, PORTH, A
+    return
+
+Display_D_press_state:
+    movff button_pressed_D, PORTB, A
+    return
+    
     
 E_and_D_press_state:
-    movf button_E_pressed, A
-    addwf button_D_pressed, 0, 0 ; adds button_E_pressed to button_D_pressed, stores in W reg
-    movwf button_pressed_state, A
-    
+    movf    button_pressed_E, W, A
+    iorwf   button_pressed_D, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
+    movwf   button_pressed_state, A         ; 0F for only E, F0 for only D, FF for both pressed, 00 for neither pressed
+    return
     
 Display_E_and_D_press_state:
     movff button_pressed_state, PORTC, A
