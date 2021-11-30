@@ -30,9 +30,9 @@ start:
 	call Recombine
 	
 	;call Is_button_pressed
-	movf button_pressed, A
-	movwf PORTD, A
-	cpfslt zero_byte, A
+	movf button_pressed, A ; 0x00 for no button pressed, 0xff for button is pressed
+	movwf PORTD, A         ; 
+	cpfslt zero_byte, A    ;   skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed
 	bra start            ; if no button is pressed
 	
 	

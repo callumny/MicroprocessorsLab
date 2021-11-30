@@ -13,17 +13,20 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>config.s</itemPath>
-      <itemPath>main.s</itemPath>
       <itemPath>UART.s</itemPath>
-      <itemPath>LCD.s</itemPath>
-      <itemPath>keyboard.s</itemPath>
+      <itemPath>main_Two_Keypads.s</itemPath>
+      <itemPath>Two_Keypads.s</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>LCD.s</itemPath>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="default" type="2">
