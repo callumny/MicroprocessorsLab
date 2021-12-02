@@ -15,7 +15,10 @@ global    Two_keypad_setup, button_pressed_state, \
     Invalid_button_press,\
     Display_two_keypad_index,\
     zero_byte, FF_byte, invalid_index,\
-    index, Two_keypad_find_index; external subroutines
+    index, Two_keypad_find_index,\
+    Invalid_button_press_on_port_D,\
+    Invalid_button_press_on_port_E,\
+    Invalid_button_press_two; external subroutines
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -391,7 +394,7 @@ Display_key_byte_D:
     return
     
 Display_NOT_key_byte_D:
-    movff   NOT_key_byte_D, PORTC, A
+    movff   NOT_key_byte_D, PORTH, A
     return  
     
 Find_index_D:    
@@ -431,112 +434,112 @@ Q_check:
     movlw   01110111B
     cpfseq  key_byte_D, A
     bra R_check
-    movlw 1    ; index for A
+    movlw 17    ; index for A
     goto Found_index_D
     
 R_check:
     movlw   10110111B
     cpfseq  key_byte_D, A
     bra S_check
-    movlw 2    ; index for B
+    movlw 18    ; index for B
     goto Found_index_D
     
 S_check:
     movlw   11010111B
     cpfseq  key_byte_D, A
     bra T_check
-    movlw 3    ; index for C
+    movlw 19    ; index for C
     goto Found_index_D
 
 T_check:
     movlw   11100111B
     cpfseq  key_byte_D, A
     bra U_check
-    movlw 4    ; index for D
+    movlw 20    ; index for D
     goto Found_index_D
     
 U_check:
     movlw   01111011B
     cpfseq  key_byte_D, A
     bra V_check
-    movlw 5    ; index for E
+    movlw 21    ; index for E
     goto Found_index_D
     
 V_check:
     movlw   10111011B
     cpfseq  key_byte_D, A
     bra W_check
-    movlw 6    ; index for F
+    movlw 22    ; index for F
     goto Found_index_D
  
 W_check:
     movlw   11011011B
     cpfseq  key_byte_D, A
     bra X_check
-    movlw 7    ; index for G
+    movlw 23   ; index for G
     goto Found_index_D 
     
 X_check:
     movlw   11101011B
     cpfseq  key_byte_D, A
     bra Y_check
-    movlw 8    ; index for H
+    movlw 24    ; index for H
     goto Found_index_D     
     
 Y_check:
     movlw   01111101B
     cpfseq  key_byte_D, A
     bra Z_check
-    movlw 9    ; index for I
+    movlw 25   ; index for I
     goto Found_index_D
     
 Z_check:
     movlw   10111101B
     cpfseq  key_byte_D, A
     bra SF1_check
-    movlw 10    ; index for J
+    movlw 26    ; index for J
     goto Found_index_D 
     
 SF1_check:
     movlw   11011101B
     cpfseq  key_byte_D, A
     bra SF2_check
-    movlw 11    ; index for K
+    movlw 27    ; index for K
     goto Found_index_D 
     
 SF2_check: 
     movlw 11101101B
     cpfseq  key_byte_D, A
     bra SF3_check
-    movlw 12    ; index for L
+    movlw 28    ; index for L
     goto Found_index_D 
 
 SF3_check:
     movlw 01111110B
     cpfseq  key_byte_D, A
     bra SF4_check
-    movlw 13    ; index for M
+    movlw 29    ; index for M
     goto Found_index_D 
     
 SF4_check:
     movlw 10111110B
     cpfseq  key_byte_D, A
     bra SF5_check
-    movlw 14    ; index for N
+    movlw 30    ; index for N
     goto Found_index_D 
 
 SF5_check:
     movlw 11011110B
     cpfseq  key_byte_D, A
     bra SF6_check
-    movlw 15    ; index for 0
+    movlw 31    ; index for 0
     goto Found_index_D 
     
 SF6_check: 
     movlw 11101110B
     cpfseq  key_byte_D, A
     bra Invalid_check_D
-    movlw 16    ; index for P
+    movlw 32    ; index for P
     goto Found_index_D 
     
 Invalid_check_D:
@@ -569,13 +572,33 @@ Display_E_and_D_press_state:
     
     
 Invalid_button_press:
-    movlw 0xAA
-    movwf PORTB, A
-    movlw 100
+    movlw 0x11
+    movwf PORTJ, A
+    nop
+    movlw 1000000000000000000
     call LCD_delay_ms
     return
 
+Invalid_button_press_on_port_E:
+    movlw 0x0A
+    movwf PORTJ, A
+    movlw 1000000000000000000
+    call LCD_delay_ms
+    return
+
+Invalid_button_press_on_port_D:
+    movlw 0xA0
+    movwf PORTJ, A
+    movlw 1000000000000000000
+    call LCD_delay_ms
+    return
     
+Invalid_button_press_two:
+    movlw 0x22
+    movwf PORTJ, A
+    movlw 1000000000000000000
+    call LCD_delay_ms
+    return
     
     
     
@@ -614,13 +637,27 @@ lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
 
 	
 	
+;Two_keypad_find_index:
+;    movf button_pressed_state, A
+;    cpfseq OF_byte, A    ; skip if only portE keypad is pressed
+;    movff index_D, index ;port D is pressed
+;    movff index_E, index ;port E is pressed
+;    return
+    
 Two_keypad_find_index:
     movf button_pressed_state, A
-    cpfseq OF_byte, A    ; skkip if only portE keypad is pressed
+    cpfseq OF_byte, A    ; skip if only portE keypad is pressed
+    bra set_index_D;movff index_D, index ;port D is pressed
+    bra set_index_E;movff index_E, index ;port E is pressed
+    ;return
+    
+set_index_D:
     movff index_D, index ;port D is pressed
+    return
+
+set_index_E:
     movff index_E, index ;port E is pressed
     return
- 
 Display_two_keypad_index:
     movff index, PORTH, A
     return
