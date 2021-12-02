@@ -17,6 +17,9 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Display_two_keypad_index,\
     zero_byte, FF_byte, invalid_index,\
     index, Two_keypad_find_index,\
+    Invalid_button_press_on_port_D,\
+    Invalid_button_press_on_port_E,\
+    Invalid_button_press_two,\
     LCD_delay_ms; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -38,6 +41,7 @@ setup:
 start: 	
         movlw 0x00
 	movwf PORTH, A	;
+	movwf PORTJ, A	;
 	movwf PORTB, A	;	
 	;movwf PORTC, A
 	;;call two_keypad_start   ; identifies which pad is pressed and 
@@ -56,25 +60,69 @@ start:
 	call Display_E_and_D_press_state
 	;call Display_E_and_D_press_state
 	
-	movf button_pressed_state, A ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed
-	;movwf PORTD, A  
+	; call find_index_e or d doesnt work here before he button_pressed_state comparison
+        call Find_index_E
+	call Find_index_D
+	
+	
+	movf button_pressed_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfslt zero_byte, A    ;   skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed
 	bra start     
 	
-	movf button_pressed_state, A ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed       ; 
-	cpfsgt FF_byte, A    ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only on button on D or E is pressed, i.e valid press
+        ;call Find_index_E
+	;call Find_index_D
+	
+	;check the buttons pressed are on only one port
+	movf button_pressed_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed       ; 
+	cpfsgt FF_byte, A    ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only one button on D or E is pressed, i.e valid press
 	call Invalid_button_press ;bra start  ;invalid
-	cpfsgt FF_byte, A
+	
+	movf button_pressed_state, 0, 0
+	cpfsgt FF_byte, A      ; for some reason isnt going to next line when button_pressed_state is FF, although it does for the above test
+	bra start
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;checks that only one button pressed on a given port
+        ;movf index_E, 0, 0
+	;cpfsgt invalid_index, A            ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only on button on D or E is pressed, i.e valid press
+	;call Invalid_button_press_on_port_E
+	
+	;movf index_E, 0, 0
+	;cpfsgt invalid_index, A
+	;bra start
+	
+        ;movf index_D, 0, 0
+	;cpfsgt invalid_index, A            ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only on button on D or E is pressed, i.e valid press
+	;call Invalid_button_press_on_port_D
+	
+	;movf index_D, 0, 0
+	;cpfsgt invalid_index, A
+	;bra start
+;;;;;;;;;;;;;;;;;;;
+	
+	;better version of check for if the press is an invalid press on just one ports keypad
+	call Two_keypad_find_index
+	
+	movf index, 0, 0
+	cpfsgt invalid_index, A            ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only on button on D or E is pressed, i.e valid press
+	call Invalid_button_press_two         ; calls same invalid button pres function as if it was for two buttons pressed with one button on each keypad 
+	
+	movf index, 0, 0
+	cpfsgt invalid_index, A
 	bra start
 	
+        movlw 0xFF
+	movwf PORTJ, A
+
+	
+	;call Display_key_byte_D
+	call Display_two_keypad_index   ; displays index on portH
 	;movlw 3
 	;movwf PORTB, A
-	call Two_keypad_find_index
-	call Display_two_keypad_index   ; displays index on portH
-	;check if e or d is chosen
-	movlw 100
-	call LCD_delay_ms; external subroutines
 
+	;check if e or d is chosen
+	movlw 100000000000
+	call LCD_delay_ms; external subroutines
+	nop
 	
 
 	goto start ; call no_button_pressed    ; no lights on B when no key prssed
