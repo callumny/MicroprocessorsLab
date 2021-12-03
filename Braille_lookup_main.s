@@ -16,7 +16,7 @@ rst: 	org 0x0
 
 setup: 
 	;call    Braille_setup
-	movlw 1
+	movlw 6
 	
 	movwf index, A
 	movlw 0x00
@@ -31,8 +31,8 @@ start:
 	movwf PORTH, A
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
 	movwf PORTJ, A
-	call Braille_table
-        ;call Braille_start
+	;call Braille_table_1
+        call Braille_table
 	movwf PORTC, A
 	goto start ; call no_button_pressed    ; no lights on B when no key prssed
 	
@@ -55,7 +55,21 @@ Braille_table:
     retlw 01010100B;	M
     retlw 01010110B;	N
     retlw 01010010B;	O
-    retlw 01110100B;  P
-
-
+    retlw 01110100B;    P
+    retlw 01110110B;    Q
+    retlw 01110010B;    R
+    retlw 00110100B;    S
+    retlw 00110110B;    T
+    retlw 01010001B;    U
+    retlw 01110001B;    V
+    retlw 00100111B;    W
+    retlw 01010101B;    X
+    retlw 01010111B;    Y
+    retlw 01010011B;    Z
+    retlw 00000000B; SF1
+    retlw 00000000B; SF2
+    retlw 00000000B; SF3
+    retlw 00000000B; SF4
+    retlw 00000000B; SF5
+    retlw 00000000B; SF6
 
