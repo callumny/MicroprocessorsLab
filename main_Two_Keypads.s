@@ -40,6 +40,7 @@ setup:
 	; ******* Main programme ****************************************
 start: 	
         movlw 0x00
+	movwf TRISB, A	;
 	movwf PORTH, A	;
 	movwf PORTJ, A	;
 	movwf PORTB, A	;	
@@ -94,8 +95,47 @@ start:
 	call LCD_delay_ms; external subroutines
 	nop
 	
-
+	movf index, 0, 0   ; moves value to w
+	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
+        call Braille_table
+	movwf PORTF, A
 	goto start ; call no_button_pressed    ; no lights on B when no key prssed
+	
+Braille_table:
+    addwf PCL, A
+    retlw 00000000B;  shouldn't be an index thta corresponds to this, just a space to make the indices correct
+    retlw 01000000B;    A
+    retlw 01100000B;    B
+    retlw 01000100B;	C
+    retlw 01000110B;	D
+    retlw 01000010B;	E
+    retlw 01100100B;	F
+    retlw 01100110B;	G
+    retlw 01100010B;	H
+    retlw 00100100B;	I
+    retlw 00100110B;	J
+    retlw 01010000B;	K
+    retlw 01110000B;	L
+    retlw 01010100B;	M
+    retlw 01010110B;	N
+    retlw 01010010B;	O
+    retlw 01110100B;    P
+    retlw 01110110B;    Q
+    retlw 01110010B;    R
+    retlw 00110100B;    S
+    retlw 00110110B;    T
+    retlw 01010001B;    U
+    retlw 01110001B;    V
+    retlw 00100111B;    W
+    retlw 01010101B;    X
+    retlw 01010111B;    Y
+    retlw 01010011B;    Z
+    retlw 00000000B; SF1
+    retlw 00000000B; SF2
+    retlw 00000000B; SF3
+    retlw 00000000B; SF4
+    retlw 00000000B; SF5
+    retlw 00000000B; SF6
 
 end start
 
