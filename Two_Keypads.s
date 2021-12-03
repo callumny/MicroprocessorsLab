@@ -6,13 +6,13 @@ extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
 global    Two_keypad_setup, button_pressed_state, \
     Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, \
     Keypad_start_E, Keypad_start_D, \
-    Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E,\
+    Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E,\
     Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
-    Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D, Check_pressed_D,\
+    Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D,\
     Find_index_D, Display_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
     Display_E_press_state,  Display_D_press_state,\
     button_pressed_state,\
-    Invalid_button_press,\
+    Invalid_button_press_one,\
     Display_two_keypad_index,\
     zero_byte, FF_byte, invalid_index,\
     index, Two_keypad_find_index,\
@@ -102,7 +102,6 @@ Keypad_start_E:
     movwf   row_byte_E, A
     movwf   column_byte_E, A
     
-    
     ;Sets rows to be inputs
     movlw 0x0F; 00001111 ; PORTE 4-7 (columns) are outputs and Port E 0-3 (rows) are inputs
     movwf TRISE, A
@@ -145,8 +144,8 @@ Split_NOT_key_byte_E:
     movlw 0xf0
     andwf NOT_key_byte_high_E, 1,0	
     return
+    
 Recombine_E:
-
     ;Combines row and column into one byte containing all the information
     ;below two lines for debugging
     ;movff   row_byte, PORTC,A
@@ -169,25 +168,24 @@ Display_NOT_key_byte_E:
     return  
     
 Find_index_E:    
-    ;movf key_byte, W, A
     bra A_check
 
-Found_index_E: ; exists as part
+Found_index_E: ; saves returned value in wreg to index_E byte
     movwf index_E, A
     return    
 
-Check_pressed_E:
-    call Split_NOT_key_byte_E
-    movlw 0x00
-    cpfsgt NOT_key_byte_low_E, A
-    retlw 0x00       ; no button pressed returns 0
-    cpfsgt NOT_key_byte_high_E, A
-    retlw 0x00       ; no button pressed returns 0  
-    movlw 0x0F
-    return
+;Check_pressed_E:
+;    call Split_NOT_key_byte_E
+;    movlw 0x00
+;    cpfsgt NOT_key_byte_low_E, A
+;    retlw 0x00       ; no button pressed returns 0
+;    cpfsgt NOT_key_byte_high_E, A
+;    retlw 0x00       ; no button pressed returns 0  
+;    movlw 0x0F
+;    return
     
-    
-Is_button_E_pressed:
+Is_button_E_pressed: 
+    ; saves value in w reg from check_pressed_2_E to button_pressed_state_E
     call Check_pressed_2_E
     movwf button_pressed_E, A
     return    ; returns to main
@@ -374,6 +372,7 @@ Split_NOT_key_byte_D:
     movlw 0xf0
     andwf NOT_key_byte_high_D, 1,0	
     return
+    
 Recombine_D:
 
     ;Combines row and column into one byte containing all the information
@@ -405,15 +404,15 @@ Found_index_D: ; exists as part
     movwf index_D, A
     return    
 
-Check_pressed_D:
-    call Split_NOT_key_byte_D
-    movlw 0x00
-    cpfsgt NOT_key_byte_low_D, A
-    retlw 0x00       ; no button pressed returns 0
-    cpfsgt NOT_key_byte_high_D, A
-    retlw 0x00       ; no button pressed returns 0  
-    movlw 0xF0
-    return   
+;Check_pressed_D:
+;    call Split_NOT_key_byte_D
+;    movlw 0x00
+;    cpfsgt NOT_key_byte_low_D, A
+;    retlw 0x00       ; no button pressed returns 0
+;    cpfsgt NOT_key_byte_high_D, A
+;    retlw 0x00       ; no button pressed returns 0  
+;    movlw 0xF0
+;    return   
     
 Is_button_D_pressed:
     call Check_pressed_2_D
@@ -570,8 +569,8 @@ Display_E_and_D_press_state:
     return
     
     
-    
-Invalid_button_press:
+; Different displays on PORTJ for different types of errors    
+Invalid_button_press_one: ;
     movlw 0x11
     movwf PORTJ, A
     nop
@@ -601,8 +600,25 @@ Invalid_button_press_two:
     return
     
     
+; Find index for keypressed
+Two_keypad_find_index:
+    movf button_pressed_state, A
+    cpfseq OF_byte, A    ; skip if only portE keypad is pressed
+    bra set_index_D      ;movff index_D, index ;port D is pressed
+    bra set_index_E      ;movff index_E, index ;port E is pressed
+    ;return
     
+set_index_D:
+    movff index_D, index ;port D is pressed
+    return
     
+set_index_E:
+    movff index_E, index ;port E is pressed
+    return
+    
+Display_two_keypad_index:
+    movff index, PORTH, A
+    return    
     
     
     
@@ -644,23 +660,7 @@ lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
 ;    movff index_E, index ;port E is pressed
 ;    return
     
-Two_keypad_find_index:
-    movf button_pressed_state, A
-    cpfseq OF_byte, A    ; skip if only portE keypad is pressed
-    bra set_index_D;movff index_D, index ;port D is pressed
-    bra set_index_E;movff index_E, index ;port E is pressed
-    ;return
-    
-set_index_D:
-    movff index_D, index ;port D is pressed
-    return
 
-set_index_E:
-    movff index_E, index ;port E is pressed
-    return
-Display_two_keypad_index:
-    movff index, PORTH, A
-    return
 end    
 
 
