@@ -38,7 +38,7 @@ start:
 	
 	
 Braille_table:
-    addwf PCL
+    addwf PCL, A
     retlw 00000000B;  shouldn't be an index thta corresponds to this, just a space to make the indices correct
     retlw 01000000B;    A
     retlw 01100000B;    B
