@@ -43,7 +43,7 @@ start:
 	movwf TRISB, A	;
 	movwf PORTH, A	;
 	movwf PORTJ, A	;
-	movwf PORTB, A	;	
+	;movwf PORTB, A	;	
 	
 	call Keypad_start_E
 	call Recombine_E
@@ -91,15 +91,16 @@ start:
 	
 	call Display_two_keypad_index   ; displays index on portH
 
+	movf index, 0, 0   ; moves value to w
+	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
+        call Braille_table
+	movwf PORTB, A
+	goto start ; call no_button_pressed    ; no lights on B when no key prssed
+	
 	movlw 100000000000
 	call LCD_delay_ms; external subroutines
 	nop
 	
-	movf index, 0, 0   ; moves value to w
-	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
-        call Braille_table
-	movwf PORTF, A
-	goto start ; call no_button_pressed    ; no lights on B when no key prssed
 	
 Braille_table:
     addwf PCL, A
