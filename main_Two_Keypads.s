@@ -43,7 +43,8 @@ start:
 	movwf TRISB, A	;
 	movwf PORTH, A	;
 	movwf PORTJ, A	;
-	;movwf PORTB, A	;	
+	;movwf PORTB, A	; when this line is commented out the correct braille displays on portB
+	; but i only want it to show braille when im holding the keypress down, cant seem to gte that to work
 	
 	call Keypad_start_E
 	call Recombine_E
@@ -91,6 +92,20 @@ start:
 	
 	call Display_two_keypad_index   ; displays index on portH
 
+	;;;;;; we have index !!!!
+	
+;call Check_enter ; writes the state to enter_length_check_byte
+	;compare enter_length_check_byte and skip line, only chekc i f length is greater than 16 if enter is not pressed
+;call Check_length ; writes the state tpo enter_length_check_byte
+	; compare enter_length_check_byte and either excute disply routine or continue reading in indcies from keypresses 
+	;DISPLAY ROUNTINE IF CHECK SUCCESS
+	
+	
+	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
+	; call save_current_index
+	
+	
+	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
         call Braille_table
@@ -100,7 +115,7 @@ start:
 	movlw 100000000000
 	call LCD_delay_ms; external subroutines
 	nop
-	
+	goto start
 	
 Braille_table:
     addwf PCL, A
