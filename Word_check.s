@@ -1,7 +1,10 @@
 #include <xc.inc>
     
 global Check_enter, Check_length, Enter_state, Length_state,\
-    Display_index_counter, Display_index_counter_word
+    Display_index_counter, Display_index_counter_word,\
+    Check_enter, Check_length,\
+    Enter_state, Length_state,\
+    Display_index_counter_word
 
 extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D, index_counter, index
     
@@ -9,6 +12,8 @@ psect	udata_acs   ; reserve data space in access ram
 Enter_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 Length_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 
+    
+psect	uart_code,class=CODE
 Check_enter:
     ;set Enter_state to 0xFF is enter pressed
     ;else set to 0x00 
