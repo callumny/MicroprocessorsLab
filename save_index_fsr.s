@@ -17,9 +17,11 @@ Set_saving_lfsr:
     return
     
 Save_current_index:
-    ;movff index, INDF0 
-    movff index, POSTINC0 ;save_the index in correct position in letter array, this will also increment the fsr
-    ;movff INDF0, 0x06
+    movff index, INDF0 
+    movff POSTINC0, PORTH
+    
+    ;movff index, POSTINC0 ;save_the index in correct position in letter array, this will also increment the fsr
+    ;movff INDF0, PORTH
     return
     
 Read_each_index:
