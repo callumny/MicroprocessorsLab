@@ -24,7 +24,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Display_index_counter,\
     Check_enter, Check_length,\
     Enter_state, Length_state,\
-    Display_index_counter_word; external subroutines
+    Display_index_counter_word,\
+    Save_current_index, Set_saving_lfsr; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -43,6 +44,7 @@ setup:
 	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
+	;call    Set_saving_lfsr
 	;call	LCD_Setup
 	goto	start
 	
@@ -123,7 +125,7 @@ start:
 	call	Display_index_counter 
 	
 	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
-	; call save_current_index
+	;call Save_current_index
 	
 	
 	
