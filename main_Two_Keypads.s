@@ -20,11 +20,14 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Invalid_button_press_on_port_D,\
     Invalid_button_press_on_port_E,\
     Invalid_button_press_two,\
-    LCD_delay_ms; external subroutines
+    LCD_delay_ms	; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
+psect     udata_acs
+index_counter:  ds  1  
+    
+    
 psect	code, abs	
 rst: 	org 0x0
  	goto	setup
@@ -32,6 +35,8 @@ rst: 	org 0x0
 	; ******* Programme FLASH read Setup Code ***********************
 
 setup: 
+	movlw 0x00
+	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
 	;call	LCD_Setup
@@ -39,6 +44,8 @@ setup:
 	
 	; ******* Main programme ****************************************
 start: 	
+    
+	
         movlw 0x00
 	movwf TRISB, A	;
 	movwf PORTH, A	;
@@ -90,11 +97,15 @@ start:
         ;movlw 0xFF
 	;movwf PORTJ, A
 	
-	call Display_two_keypad_index   ; displays index on portH
+	;call Display_two_keypad_index   ; displays index on portH
 
 	;;;;;; we have index !!!!
+	;increment index_counter
+	;movlw 1
+	;addwf index_counter, A
 	
-;call Check_enter ; writes the state to enter_length_check_byte
+	
+	;call Check_enter ; writes the state to enter_length_check_byte
 	;compare enter_length_check_byte and skip line, only chekc i f length is greater than 16 if enter is not pressed
 ;call Check_length ; writes the state tpo enter_length_check_byte
 	; compare enter_length_check_byte and either excute disply routine or continue reading in indcies from keypresses 
