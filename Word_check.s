@@ -1,4 +1,5 @@
 #include <xc.inc>
+    
 global Check_enter, Check_length, Enter_state, Length_state,\
     Display_index_counter, Display_index_counter_word
 
