@@ -44,7 +44,7 @@ setup:
 	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
-	;call    Set_saving_lfsr
+	call    Set_saving_lfsr
 	;call	LCD_Setup
 	goto	start
 	
@@ -125,7 +125,7 @@ start:
 	call	Display_index_counter 
 	
 	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
-	;call Save_current_index
+	call Save_current_index
 	
 	
 	
@@ -133,7 +133,9 @@ start:
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
         call Braille_table
 	movwf PORTB, A
-	movlw 10000000       ; LCD delay ms has a limit!!!!!!!!!!!!!
+	;DELAY
+	movlw 100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+
 	call LCD_delay_ms; external subroutines
 	call LCD_delay_ms; external subroutines
 	call LCD_delay_ms; external subroutines
@@ -144,7 +146,8 @@ start:
 Display:
     ; needs to read indexes in turn and display them
     call Display_index_counter_word ; should only show 16
-    movlw 10000000       ; LCD delay ms has a limit!!!!!!!!!!!!!
+    ;;;;;;DELAY
+    ;movlw 10000000       ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines
