@@ -12,8 +12,10 @@ psect	udata_acs   ; reserve data space in access ram
 Enter_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 Length_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 
-    
-psect	uart_code,class=CODE
+;psect code, abs
+;psect code, class=CODE
+;psect	uart_code,class=CODE
+psect	word_code,class=CODE
 Check_enter:
     ;set Enter_state to 0xFF is enter pressed
     ;else set to 0x00 
