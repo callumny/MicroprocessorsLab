@@ -7,8 +7,8 @@ extrn    index
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 letter_array:    ds 16 ; reserve 128 bytes for message data
 
-psect code, abs
-
+;psect code, abs
+psect	save_index_fsr_code,class=CODE
 Set_saving_lfsr:
     ;bcf	STATUS, 0	; point to Flash program memory 
     ;bcf	CFGS	; point to Flash program memory  
