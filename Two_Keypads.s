@@ -46,7 +46,8 @@ FF_byte:            ds 1
 OF_byte:            ds 1
 invalid_index:      ds 1
 index:              ds 1
-psect	uart_code,class=CODE
+;psect	uart_code,class=CODE
+psect	keypad_code,class=CODE
     
 Two_keypad_setup:
     ;select the correct bank to work in
