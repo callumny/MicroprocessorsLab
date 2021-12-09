@@ -508,35 +508,35 @@ SF1_check:
     goto Found_index_D 
     
 SF2_check: 
-    movlw 11101101B
+    movlw   11101101B
     cpfseq  key_byte_D, A
     bra SF3_check
     movlw 28    ; index for L
     goto Found_index_D 
 
 SF3_check:
-    movlw 01111110B
+    movlw   01111110B
     cpfseq  key_byte_D, A
     bra SF4_check
     movlw 29    ; index for M
     goto Found_index_D 
     
 SF4_check:
-    movlw 10111110B
+    movlw   10111110B
     cpfseq  key_byte_D, A
     bra SF5_check
     movlw 30    ; index for N
     goto Found_index_D 
 
 SF5_check:
-    movlw 11011110B
+    movlw   11011110B
     cpfseq  key_byte_D, A
     bra SF6_check
     movlw 31    ; index for 0
     goto Found_index_D 
     
 SF6_check: 
-    movlw 11101110B
+    movlw   11101110B
     cpfseq  key_byte_D, A
     bra Invalid_check_D
     movlw 32    ; index for P
