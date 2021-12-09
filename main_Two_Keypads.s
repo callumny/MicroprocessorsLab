@@ -25,7 +25,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Check_enter, Check_length,\
     Enter_state, Length_state,\
     Display_index_counter_word,\
-    Save_current_index, Set_saving_lfsr; external subroutines
+    Save_current_index, Set_saving_lfsr, Set_reading_lfsr,\
+    Read_each_index; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -45,6 +46,7 @@ setup:
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
 	call    Set_saving_lfsr
+	call    Set_reading_lfsr
 	;call	LCD_Setup
 	goto	start
 	
@@ -54,6 +56,8 @@ start:
 	
         movlw 0x00
 	movwf TRISB, A	;
+	movwf TRISF, A	;
+	
 	movwf PORTH, A	;
 	movwf PORTJ, A	;
 	;movwf PORTB, A	; when this line is commented out the correct braille displays on portB
@@ -146,12 +150,37 @@ start:
 Display:
     ; needs to read indexes in turn and display them
     call Display_index_counter_word ; should only show 16
+ ;   call Display_loop
+    
     ;;;;;;DELAY
-    ;movlw 10000000       ; LCD delay ms has a limit!!!!!!!!!!!!!
+    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines
-    call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms; external subroutines
     bra setup	
+    
+;Display_loop:
+;    movlw 0x01
+;    movwf PORTF, A
+;    call Read_each_index
+;    movwf PORTJ, A;show on braille
+;    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+;    call LCD_delay_ms; external subroutines
+;    call LCD_delay_ms; external subroutines
+;    call LCD_delay_ms; external subroutines
+    
+;    movlw 0
+;    movwf PORTF, A;show on braille
+;    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+;    call LCD_delay_ms; external subroutines
+;    call LCD_delay_ms; external subroutines
+;    call LCD_delay_ms; external subroutines
+;    
+    
+;    decfsz index_counter, A
+;    bra Display_loop
+;    return
+    
     
 Braille_table:
     addwf PCL, A
