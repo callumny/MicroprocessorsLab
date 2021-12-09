@@ -12,10 +12,7 @@ letter_array:    ds 16 ; reserve 128 bytes for message data
 ;psect code, abs
 psect	save_index_fsr_code,class=CODE
 Set_saving_lfsr:
-    ;bcf	STATUS, 0	; point to Flash program memory 
-    ;bcf	CFGS	; point to Flash program memory  
-    ;bsf	EEPGD 	; access Flash program memory
-    
+
     ;lfsr 0, letter_array ; loads letter_array to fsr, so we can point at data adreses more effectively
     lfsr 0, myArray
     return
