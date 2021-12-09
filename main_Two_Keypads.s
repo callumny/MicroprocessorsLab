@@ -41,6 +41,8 @@ rst: 	org 0x0
 	; ******* Programme FLASH read Setup Code ***********************
 
 setup: 
+	;movlw 0xFF
+	;movwf PORTH
 	movlw 0x00
 	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
@@ -142,7 +144,7 @@ start:
 
 	call LCD_delay_ms; external subroutines
 	call LCD_delay_ms; external subroutines
-	call LCD_delay_ms; external subroutines
+	;call LCD_delay_ms; external subroutines
 	nop
 	movlw 0x00
 	movwf PORTB, A
@@ -150,7 +152,7 @@ start:
 Display:
     ; needs to read indexes in turn and display them
     call Display_index_counter_word ; should only show 16
- ;   call Display_loop
+    ;call Display_loop
     
     ;;;;;;DELAY
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
@@ -159,29 +161,29 @@ Display:
     ;call LCD_delay_ms; external subroutines
     bra setup	
     
-;Display_loop:
-;    movlw 0x01
-;    movwf PORTF, A
+Display_loop:
+    ;movlw 0x01
+    ;movwf PORTF, A
 ;    call Read_each_index
-;    movwf PORTJ, A;show on braille
-;    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-;    call LCD_delay_ms; external subroutines
-;    call LCD_delay_ms; external subroutines
-;    call LCD_delay_ms; external subroutines
+    ;movwf PORTF, A;show on braille
+    ;movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    ;call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    ;call LCD_delay_ms; external subroutines
     
-;    movlw 0
-;    movwf PORTF, A;show on braille
-;    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-;    call LCD_delay_ms; external subroutines
-;    call LCD_delay_ms; external subroutines
-;    call LCD_delay_ms; external subroutines
-;    
+    ;movlw 0
+    ;movwf PORTF, A;show on braille
+    ;movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    ;call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    ;call LCD_delay_ms; external subroutines    
     
-;    decfsz index_counter, A
-;    bra Display_loop
-;    return
-    
-    
+    ;decfsz index_counter, A
+    ;bra Display_loop
+    ;nop;movlw 0
+    return
+   
+    ;nop ;comment out for sf4 key to work, for some reason the number of lines before PCL line affects the last look up possible in the look up table  
 Braille_table:
     addwf PCL, A
     retlw 00000000B;  shouldn't be an index thta corresponds to this, just a space to make the indices correct
@@ -211,13 +213,20 @@ Braille_table:
     retlw 01010101B;    X
     retlw 01010111B;    Y
     retlw 01010011B;    Z
-    retlw 00000000B; SF1
-    retlw 00000000B; SF2
-    retlw 00000000B; SF3
-    retlw 00000000B; SF4
-    retlw 00000000B; SF5
-    retlw 00000000B; SF6
-
+    retlw 00000001B; SF1
+    retlw 00000010B; SF2
+    retlw 00000100B; SF3
+    retlw 00001000B; SF4
+    retlw 00010000B; SF5
+    retlw 11111111B; SF6
+    ;end Braille_table
+    ;
+    ;
+    
+    
+    
+    
+    
 end start
 
 
