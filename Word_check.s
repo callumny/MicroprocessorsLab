@@ -37,7 +37,7 @@ enter_not_pressed:
 Check_length:
     ;set Length_state to 0xFF is index_counter is 16
     ;else set to 0x00 
-    movlw   17		;check the length before incrementing its 16, after incrementing the first null key press would be at 17
+    movlw   16		;once the 16th letter is entered the display begins; check the length before incrementing its 16, after incrementing the first null key press would be at 17
     cpfslt  index_counter, A	    ;compares the index counter to 16, skips as long as index_counter<16	
     bra	    length_long		    ; runs when this condition is no longer met
     bra	    length_short	    ; runs whilst the condition is met
@@ -53,7 +53,9 @@ length_short:
     return
 
 Display_index_counter_word:
-    movff index_counter, PORTJ, A
+    ;movff index_counter, PORTJ, A
+    movlw 0xff
+    movwf PORTJ, A
     return
     
 Display_index_counter:
