@@ -6,8 +6,9 @@ extrn    index
     
 psect	udata_acs ; reserve data anywhere in RAM (here at 0x400)
 letter_array:    ds 16 ; reserve 128 bytes for message data
-	myArray EQU 0x400
+	myArray EQU 0x200
 	align 2
+	
 ;psect code, abs
 psect	save_index_fsr_code,class=CODE
 Set_saving_lfsr:
