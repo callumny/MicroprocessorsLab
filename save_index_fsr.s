@@ -24,6 +24,7 @@ Save_current_index:
     
 Set_reading_lfsr:
     lfsr 1, letter_array
+    return
     
 Read_each_index:
     movf POSTINC1, 0, 0     ; moves current index being read into w register
