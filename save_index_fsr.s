@@ -4,17 +4,14 @@ global        Save_current_index, Read_each_index, Set_saving_lfsr, Set_reading_
 extrn    index
     
     
-psect	udata_acs ; reserve data anywhere in RAM (here at 0x400)
-letter_array:    ds 16 ; reserve 128 bytes for message data
-	myArray EQU 0x200
-	align 2
-	
-;psect code, abs
-psect	save_index_fsr_code,class=CODE
-Set_saving_lfsr:
+psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
 
-    ;lfsr 0, letter_array ; loads letter_array to fsr, so we can point at data adreses more effectively
-    lfsr 0, myArray
+letter_array:    ds 16 ; reserve 128 bytes for message data	
+
+psect	save_index_fsr_code,class=CODE
+
+Set_saving_lfsr:
+    lfsr 0, letter_array ; loads letter_array to fsr, so we can point at data adreses more effectively
     return
     
 Save_current_index:
@@ -22,13 +19,12 @@ Save_current_index:
     ;movff POSTINC0, PORTH;
     
     movff index, POSTINC0 ;save_the index in correct position in letter array, this will also increment the fsr
-    
     return
     
     
 Set_reading_lfsr:
-    ;lfsr 1, letter_array
-    lfsr 1, myArray
+    lfsr 1, letter_array
+    
 Read_each_index:
     movf POSTINC1, 0, 0     ; moves current index being read into w register
     return
