@@ -130,6 +130,10 @@ start:
 
 	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
+	call Save_current_index;i want to save the index of the 16th letter and then go onto display;  ;bra Display;display subroutine ;length i gtretaer than 16
+	;continue
+	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
 	bra Display;display subroutine ;length i gtretaer than 16
 	
 	call	Display_index_counter 
@@ -143,7 +147,7 @@ start:
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
         ; stop calling braille table because braille table is overflowing
 	;call Braille_table
-	movwf PORTF, A
+	;movwf PORTF, A
 	;DELAY
 	movlw 100      ; LCD delay ms has a limit!!!!!!!!!!!!!
 
@@ -172,11 +176,20 @@ Display_loop:
     ;movwf PORTB, A
     call Read_each_index
     movwf PORTB, A;show on braille
+    ;rlncf W, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
+    
+    
+    ; stop calling braille table because braille table is overflowing
+   ; call Braille_table
+    ;movwf PORTF, A
+    
+    
+    
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-    call LCD_delay_ms; external subroutines
-    call LCD_delay_ms
+    ;call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms
     
     movlw 0
     movwf PORTB, A;show on braille
