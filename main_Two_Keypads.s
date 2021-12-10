@@ -121,6 +121,10 @@ start:
 	
 	movf Enter_state, 0, 0 ; same check as above but now branches to start
 	cpfsgt FF_byte, A ; no enter pressed
+	decf index_counter, 1  ; decrements word length by one to not include enter key press as an extra leter count in the word
+	
+	movf Enter_state, 0, 0 ; same check as above but now branches to start
+	cpfsgt FF_byte, A ; no enter pressed
 	bra Display       ;enter pressed
 	;continue to check length
 
@@ -137,8 +141,9 @@ start:
 	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
-        call Braille_table
-	movwf PORTB, A
+        ; stop calling braille table because braille table is overflowing
+	;call Braille_table
+	movwf PORTF, A
 	;DELAY
 	movlw 100      ; LCD delay ms has a limit!!!!!!!!!!!!!
 
@@ -147,40 +152,40 @@ start:
 	;call LCD_delay_ms; external subroutines
 	nop
 	movlw 0x00
-	movwf PORTB, A
+	movwf PORTF, A
 	goto start
 Display:
     ; needs to read indexes in turn and display them
     call Display_index_counter_word ; should only show 16
-    ;call Display_loop
+    call Display_loop
     
     ;;;;;;DELAY
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines
     ;call LCD_delay_ms; external subroutines
+    nop
     bra setup	
     
 Display_loop:
     ;movlw 0x01
-    ;movwf PORTF, A
-;    call Read_each_index
-    ;movwf PORTF, A;show on braille
-    ;movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    ;call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    ;movwf PORTB, A
+    call Read_each_index
+    movwf PORTB, A;show on braille
+    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    call LCD_delay_ms; external subroutines
+    call LCD_delay_ms; external subroutines dont uncomment this- too many delays
     ;call LCD_delay_ms; external subroutines
     
-    ;movlw 0
-    ;movwf PORTF, A;show on braille
-    ;movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    ;call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    movlw 0
+    movwf PORTB, A;show on braille
+    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    call LCD_delay_ms; external subroutines
+    call LCD_delay_ms; external subroutines dont uncomment this- too many delays
     ;call LCD_delay_ms; external subroutines    
-    
-    ;decfsz index_counter, A
-    ;bra Display_loop
-    ;nop;movlw 0
+    nop
+    decfsz index_counter, A
+    bra Display_loop
     return
    
     ;nop ;comment out for sf4 key to work, for some reason the number of lines before PCL line affects the last look up possible in the look up table  
