@@ -175,7 +175,8 @@ Display_loop:
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-    ;call LCD_delay_ms; external subroutines
+    call LCD_delay_ms; external subroutines
+    call LCD_delay_ms
     
     movlw 0
     movwf PORTB, A;show on braille
