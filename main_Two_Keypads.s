@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, setup, index_counter
+global	start, setup, index_counter, current_index,counter
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -26,12 +26,18 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Enter_state, Length_state,\
     Display_index_counter_word,\
     Save_current_index, Set_saving_lfsr, Set_reading_lfsr,\
-    Read_each_index; external subroutines
+    Read_each_index,\
+    Initialise_alphabet,\
+    Initialise_braille,\
+    Alphabet_lookup,\
+    Braille_lookup; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 psect     udata_acs
-index_counter:  ds  1  
+index_counter:  ds  1 
+current_index:	ds  1
+counter:	ds  1
     
     
 psect	code, abs	
@@ -174,7 +180,12 @@ Display:
 Display_loop:
     ;movlw 0x01
     ;movwf PORTB, A
-    call Read_each_index
+    call Read_each_index	    ;puts the index being read into the W repositry
+    
+    call Initialise_alphabet
+    call Initialise_braille 
+    call Braille_lookup		    ;uses the value in the W repositry to find it in the braille FSR, puts the corresponding braille in W repositry
+   
     movwf PORTB, A;show on braille
     ;rlncf W, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
     
