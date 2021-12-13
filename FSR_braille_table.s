@@ -1,8 +1,8 @@
 #include <xc.inc>
     
-global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word
+global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,LCD_word_display
 
-extrn	counter,final_alphabet,final_braille,index,read_index,index_counter
+extrn	counter,final_alphabet,final_braille,index,read_index,index_counter,LCD_Write_Message,LCD_delay_ms,LCD_Send_Byte_D
 
 psect	udata_bank6
 word:	ds  16
@@ -87,6 +87,35 @@ Create_word:	    ;takes the letter in final_alphabet and puts it in the correcti
     addlw   -1		;because it starts at 601 for some reason, think its because the index is incremented before we call this
     movff   final_alphabet,PLUSW2
     return
+    
+    
+WriteDisplay:
+	movlw	low highword(word)	; address of data in PM
+	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
+	movlw	high(word)	; address of data in PM
+	movwf	TBLPTRH, A		; load high byte to TBLPTRH
+	movlw	low(word)	; address of data in PM
+	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+	
+	movf	index_counter, W
+	addwf	TBLPTRL, F
+	movlw	0x0
+	addwfc	TBLPTRH, F
+	addwfc	TBLPTRU, F		    ;this needs some messing around withy
+	
+	movlw	index_counter
+	call	LCD_Write_Message
+	return
+	
+;LCD_Loop_message:
+ ;   tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
+  ;  movf    TABLAT, W, A
+   ; call    LCD_Send_Byte_D
+    ;decfsz  index_counter, A
+    ;bra	    LCD_Loop_message
+    ;movlw	100
+    ;call	LCD_delay_ms
+    ;return
     
 Braille_lookup:
     ;need to initialise the fsr before doing anything
