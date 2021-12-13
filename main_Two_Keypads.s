@@ -29,9 +29,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Read_each_index,\
     Initialise_braille,\
     Braille_lookup,\
-    Initialise_alphabet,\
-    Create_word,\
-    Alphabet_lookup; external subroutines
+    Initialise_alphabet,Alphabet_lookup,Create_word; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -41,8 +39,8 @@ read_index: ds 1
 counter:    ds 1
 final_braille: ds 1
 final_alphabet: ds 1
-
-   
+    
+    
 psect	code, abs	
 rst: 	org 0x0
  	goto	setup
@@ -58,7 +56,7 @@ setup:
 	call    Two_keypad_setup
 	
 	call	Initialise_braille
-	call	Initialise_alphabet
+	;call	Initialise_alphabet
 	
 	call    Set_saving_lfsr
 	call    Set_reading_lfsr
@@ -69,30 +67,32 @@ setup:
 	; ******* Main programme ****************************************
 start: 	
     
-	; Sets the tristates of various ports to make then outputs
+	
         movlw 0x00
 	movwf TRISB, A	;
 	movwf TRISF, A	;
+	
 	movwf PORTH, A	;
 	movwf PORTJ, A	;
+	;movwf PORTB, A	; when this line is commented out the correct braille displays on portB
+	; but i only want it to show braille when im holding the keypress down, cant seem to gte that to work
 	
-	; Calls on multiple start routines
 	call Keypad_start_E
 	call Recombine_E
 	call Keypad_start_D
 	call Recombine_D
 	
-	; Checks which of the keypards is pressed if any
 	call Is_button_E_pressed
 	call Is_button_D_pressed
+	;call Display_E_press_state
+	;call Display_D_press_state
 	call E_and_D_press_state
+	;call Display_E_and_D_press_state ; F0 for portD, 0F for port E, FF for both pressed, 00 for neither pressed
 
-	; If one of the keypads is pressed, then finds the corresponding index
         call Find_index_E   ; as for one keypad
 	call Find_index_D   ; as for one keypad 
 	
 	
-	;Checks if a button is pressed
 	movf button_pressed_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfslt zero_byte, A    ;   skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed
 	bra start    
@@ -117,14 +117,17 @@ start:
 	cpfsgt invalid_index, A
 	bra start
 	
-	;double checking the relevant index has been aquired
+	; lights to show if checks have been passed
+        ;movlw 0xFF
+	;movwf PORTJ, A
+	
 	call Display_two_keypad_index   ; displays index on portH
 
-	;index has been found and now we increment the index counter
+	;;;;;; we have index !!!!
+	;increment index_counter
 	movlw 1
 	addwf index_counter, A
 	
-	;Checks if the enter button has been pressed, or if the word is 16 letters long
 	call Check_enter ; writes the state to enter_length_check_byte
 	call Check_length
 	
@@ -145,15 +148,12 @@ start:
 	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
 	bra Display;display subroutine ;length i gtretaer than 16
 	
-	;displays the index counter on port C to confirm for debugging
 	call	Display_index_counter 
 	
-	; saves our index if the button was not an enter and the word was not too long
+	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
 	call Save_current_index
 	
-	; translates our index into a letter, and then adds to the word being created at 0x600
-	call	Alphabet_lookup
-	call	Create_word
+	
 	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
