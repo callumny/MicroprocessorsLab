@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, setup, index_counter, read_index
+global	start, setup, index_counter, read_index, counter,final_braille,final_alphabet
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -26,13 +26,18 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Enter_state, Length_state,\
     Display_index_counter_word,\
     Save_current_index, Set_saving_lfsr, Set_reading_lfsr,\
-    Read_each_index, Get_braille_byte; external subroutines
+    Read_each_index,\
+    Initialise_braille,\
+    Braille_lookup; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 psect     udata_acs
 index_counter:  ds  1  
-read_index: ds 1    
+read_index: ds 1  
+counter:    ds 1
+final_braille: ds 1
+final_alphabet: ds 1
     
     
 psect	code, abs	
@@ -48,8 +53,13 @@ setup:
 	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
+	
+	call	Initialise_braille
+	;call	Initialise_alphabet
+	
 	call    Set_saving_lfsr
 	call    Set_reading_lfsr
+	
 	;call	LCD_Setup
 	goto	start
 	
@@ -176,13 +186,13 @@ Display_loop:
     ;movlw 0x01
     ;movwf PORTB, A
     
-    ;call Read_each_index
-    movlw 1
-    movwf    read_index, A
-    call Get_braille_byte
-    
-    movwf PORTB, A;show on braille
-    
+    call Read_each_index
+    ;movlw 1
+    ;movwf    read_index, A
+    ;movf read_index, 0, 0
+    call    Braille_lookup
+    movff final_braille, PORTB, A;show on braille
+    ;movwf PORTB, A
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
