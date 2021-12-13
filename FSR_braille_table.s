@@ -1,8 +1,8 @@
 #include <xc.inc>
     
-global   Initialise_alphabet,Initialise_braille,Alphabet_lookup,Braille_lookup
+global   Initialise_braille,Braille_lookup
 
-extrn	current_index, counter
+extrn	counter,final_alphabet,final_braille,index,read_index
 
 psect	udata_bank5 ; reserve data anywhere in RAM (here at 0x400)
 myArray_alphabet:   ds	32
@@ -11,7 +11,7 @@ psect	data
 
 alphabet_array:    ;need to load these in at the start of the programme in the intialisation stage
     
-    db '0','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','!','£','$','%','&','*'	
+    db '0','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','B','A','J','J'	
     alphabet_array_1 EQU 32
     align 2
 
@@ -30,7 +30,8 @@ braille_array:
 psect	FSR_braille_table_code,class=CODE
 
 Initialise_alphabet:
-	lfsr	0,myArray_braille
+	
+	lfsr	0,myArray_alphabet
 	movlw	low highword(alphabet_array)
 	movwf	TBLPTRU, A
 	movlw	high(alphabet_array)	; address of data in PM
@@ -38,13 +39,17 @@ Initialise_alphabet:
 	movlw	low(alphabet_array)	; address of data in PM
 	movwf	TBLPTRL, A		; load low byte to TBLPTRL
 	movlw	alphabet_array_1	; bytes to read
+	addlw	1
 	movwf	counter,A
+	
+	bra	loop_alphabet
+	
 loop_alphabet: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	movff	TABLAT, POSTINC0; move data from TABLAT to (FSR0), inc FSR0	
 	decfsz	counter, A		; count down to zero
 	bra	loop_alphabet		; keep going until finished
     
-    return
+	return
     
 Initialise_braille:
 	lfsr	2,myArray_braille
@@ -55,24 +60,36 @@ Initialise_braille:
 	movlw	low(braille_array)	; address of data in PM
 	movwf	TBLPTRL, A		; load low byte to TBLPTRL
 	movlw	braille_array_1	; bytes to read
+	addlw	1
 	movwf	counter,A
+	bra	loop_braille
+	
 loop_braille: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	movff	TABLAT, POSTINC2; move data from TABLAT to (FSR0), inc FSR0	
 	decfsz	counter, A		; count down to zero
 	bra	loop_braille		; keep going until finished
     
-    return
+	return
 
     
 Alphabet_lookup:
-    movf   FSR0,0,0
-    movf   INDF0,0,0
+    ;need to intialise the fsr before doing anything
+ ;   lfsr   0, myArray_alphabet
+  ;  movff   index,FSR0
+   ; movff   INDF0,final_alphabet
     return
+    
     
 Braille_lookup:
-    movff   current_index, INDF2
-    movf   FSR2,0,0
+    ;need to initialise the fsr before doing anything
+    lfsr    2, myArray_braille
+    movf    read_index,W
+    movff   PLUSW2,final_braille
+
+;Set_braille_lfsr:
+;    lfsr 2, myArray_braille ; loads letter_array to fsr, so we can point at data adreses more effectively
+;    return
+    
+    
     return
     
-
-
