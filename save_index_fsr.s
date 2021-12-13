@@ -1,7 +1,7 @@
 #include <xc.inc>
     
 global        Save_current_index, Read_each_index, Set_saving_lfsr, Set_reading_lfsr ;also letters 1-17    
-extrn    index
+extrn    index,read_index
     
     
 psect	udata_bank4 ; reserve data anywhere in RAM (here at 0x400)
@@ -27,7 +27,7 @@ Set_reading_lfsr:
     return
     
 Read_each_index:
-    movf POSTINC1, 0, 0     ; moves current index being read into w register
+    movff POSTINC1, read_index     ; moves current index being read into w register
     return
     
 Initialise_letter_array:
