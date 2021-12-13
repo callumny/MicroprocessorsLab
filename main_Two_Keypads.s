@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, setup, index_counter, current_index,counter
+global	start, setup, index_counter, read_index
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -26,18 +26,13 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Enter_state, Length_state,\
     Display_index_counter_word,\
     Save_current_index, Set_saving_lfsr, Set_reading_lfsr,\
-    Read_each_index,\
-    Initialise_alphabet,\
-    Initialise_braille,\
-    Alphabet_lookup,\
-    Braille_lookup; external subroutines
+    Read_each_index, Get_braille_byte; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 psect     udata_acs
-index_counter:  ds  1 
-current_index:	ds  1
-counter:	ds  1
+index_counter:  ds  1  
+read_index: ds 1    
     
     
 psect	code, abs	
@@ -180,21 +175,13 @@ Display:
 Display_loop:
     ;movlw 0x01
     ;movwf PORTB, A
-    call Read_each_index	    ;puts the index being read into the W repositry
     
-    call Initialise_alphabet
-    call Initialise_braille 
-    call Braille_lookup		    ;uses the value in the W repositry to find it in the braille FSR, puts the corresponding braille in W repositry
-   
+    ;call Read_each_index
+    movlw 1
+    movwf    read_index, A
+    call Get_braille_byte
+    
     movwf PORTB, A;show on braille
-    ;rlncf W, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
-    
-    
-    ; stop calling braille table because braille table is overflowing
-   ; call Braille_table
-    ;movwf PORTF, A
-    
-    
     
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
@@ -214,47 +201,11 @@ Display_loop:
     return
    
     ;nop ;comment out for sf4 key to work, for some reason the number of lines before PCL line affects the last look up possible in the look up table  
-Braille_table:
-    addwf PCL, A
-    retlw 00000000B;  shouldn't be an index thta corresponds to this, just a space to make the indices correct
-    retlw 01000000B;    A
-    retlw 01100000B;    B
-    retlw 01000100B;	C
-    retlw 01000110B;	D
-    retlw 01000010B;	E
-    retlw 01100100B;	F
-    retlw 01100110B;	G
-    retlw 01100010B;	H
-    retlw 00100100B;	I
-    retlw 00100110B;	J
-    retlw 01010000B;	K
-    retlw 01110000B;	L
-    retlw 01010100B;	M
-    retlw 01010110B;	N
-    retlw 01010010B;	O
-    retlw 01110100B;    P
-    retlw 01110110B;    Q
-    retlw 01110010B;    R
-    retlw 00110100B;    S
-    retlw 00110110B;    T
-    retlw 01010001B;    U
-    retlw 01110001B;    V
-    retlw 00100111B;    W
-    retlw 01010101B;    X
-    retlw 01010111B;    Y
-    retlw 01010011B;    Z
-    retlw 00000001B; SF1
-    retlw 00000010B; SF2
-    retlw 00000100B; SF3
-    retlw 00001000B; SF4
-    retlw 00010000B; SF5
-    retlw 11111111B; SF6
+
     ;end Braille_table
     ;
     ;
-    
-    
-    
+
     
     
 end start
