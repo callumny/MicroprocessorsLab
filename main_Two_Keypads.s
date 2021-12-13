@@ -29,7 +29,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Read_each_index,\
     Initialise_braille,\
     Braille_lookup,\
-    Initialise_alphabet,Alphabet_lookup,Create_word; external subroutines
+    Initialise_alphabet,Alphabet_lookup,Create_word,\
+    LCD_Setup; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -48,20 +49,19 @@ rst: 	org 0x0
 	; ******* Programme FLASH read Setup Code ***********************
 
 setup: 
-	;movlw 0xFF
-	;movwf PORTH
+	call	LCD_Setup		;LCD set up does something weird to port B, not sure why when placed lower down
 	movlw 0x00
 	movwf index_counter, A ; tells you what index we are at
 	;;call	Two_keypad_setup	; setup keyboard
 	call    Two_keypad_setup
 	
 	call	Initialise_braille
-	;call	Initialise_alphabet
+	call	Initialise_alphabet
 	
 	call    Set_saving_lfsr
 	call    Set_reading_lfsr
 	
-	;call	LCD_Setup
+	
 	goto	start
 	
 	; ******* Main programme ****************************************
@@ -153,7 +153,10 @@ start:
 	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
 	call Save_current_index
 	
+	;save letter to our word to then output on LCD
 	
+	call	Alphabet_lookup
+	call	Create_word
 	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
