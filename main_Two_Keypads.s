@@ -30,7 +30,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_braille,\
     Braille_lookup,\
     Initialise_alphabet,Alphabet_lookup,Create_word,\
-    LCD_Setup; external subroutines
+    LCD_Setup,LCD_word_display; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -175,6 +175,11 @@ start:
 	goto start
 Display:
     ; needs to read indexes in turn and display them
+    call LCD_word_display
+    
+    movlw   100
+    call    LCD_delay_ms
+    
     call Display_index_counter_word ; should only show 16
     call Display_loop
     
