@@ -1,9 +1,11 @@
 #include <xc.inc>
     
-global   Initialise_braille,Braille_lookup, Initialise_alphabet,Alphabet_lookup,Create_word
+global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word
 
-extrn	counter,final_alphabet,final_braille,index,read_index, index_counter
+extrn	counter,final_alphabet,final_braille,index,read_index,index_counter
 
+psect	udata_bank6
+word:	ds  16
 psect	udata_bank5 ; reserve data anywhere in RAM (here at 0x400)
 myArray_alphabet:   ds	32
 
@@ -26,10 +28,7 @@ braille_array:
     db	00000000B, 01000000B,01100000B,01000100B,01000110B,01000010B,01100100B,01100110B,01100010B,00100100B,00100110B,01010000B,01110000B,01010100B,01010110B,01010010B,01110100B,01110110B,01110010B,00110100B,00110110B,01010001B,01110001B,00100111B,01010101B,01010111B,01010011B,00000001B,00000010B,00000100B,00001000B,00010000B,11111111B	
     braille_array_1 EQU 32
     align 2
-
-psect	udata_bank6
-word:	ds 16
-    
+	
 psect	FSR_braille_table_code,class=CODE
 
 Initialise_alphabet:
@@ -85,7 +84,7 @@ Alphabet_lookup:	;takes the index and converts it into a letter, places in final
 Create_word:	    ;takes the letter in final_alphabet and puts it in the correction position in the word (word stored at 0x600)
     lfsr    2, word
     movf    index_counter,W
-    addlw   -1
+    addlw   -1		;because it starts at 601 for some reason, think its because the index is incremented before we call this
     movff   final_alphabet,PLUSW2
     return
     
@@ -95,6 +94,5 @@ Braille_lookup:
     movf    read_index,W
     movff   PLUSW2,final_braille
 
-    
     return
     
