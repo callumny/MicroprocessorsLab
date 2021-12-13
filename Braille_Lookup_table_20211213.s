@@ -10,13 +10,13 @@ psect	Braille_code,class=CODE
 Get_braille_byte:
     ; multiply index by two?; rlncf W, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
     movlw    high(Braille_table)
-    movwf    PCLATH      ; set the upper address bits
+    movwf    PCLATH, A      ; set the upper address bits
     movf     read_index, 0, 0     ; get the value back
     addlw    low(Braille_table)  ; offset into table
     	
-    btfsc    STATUS, C;  bit 3 is the status register skpnc                ; an overflow?
-    incf     PCLATH, f   ; yes, bump to next 'page'
-    movwf    PCL         ; do the jump
+    btfsc    STATUS, 0;  bit 3 is the status register skpnc                ; an overflow?
+    incf     PCLATH, f, A   ; yes, bump to next 'page'
+    movwf    PCL, A         ; do the jump
     
 Braille_table:
     retlw 00000000B;  shouldn't be an index thta corresponds to this, just a space to make the indices correct
