@@ -4,6 +4,7 @@ global Check_enter, Check_length, Enter_state, Length_state,\
     Display_index_counter, Display_index_counter_word,\
     Check_enter, Check_length,\
     Enter_state, Length_state,\
+    Check_delay_set_key, Delay_set_key_state,\
     Display_index_counter_word
 
 extrn LCD_Write_Message, start, LCD_Send_Byte_D, index_counter, index
@@ -11,6 +12,7 @@ extrn LCD_Write_Message, start, LCD_Send_Byte_D, index_counter, index
 psect	udata_acs   ; reserve data space in access ram
 Enter_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
 Length_state:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
+Delay_set_key_state: ds 1
 
 ;psect code, abs
 ;psect code, class=CODE
@@ -33,6 +35,26 @@ enter_not_pressed:
     movlw   0x00	    ;if enter buttton is not pressed, 0x00 is moved into the Enter_state byte
     movwf   Enter_state, A
     return
+
+Check_delay_set_key:
+    ;set Delay_set_key_state to 0xFF is enter pressed
+    ;else set to 0x00 
+    movlw   31		;moves the index value of the enter press to w
+    cpfseq  index, A	; compares to the actual index, skips if less than 32, runs next line when =< 32
+    bra	    dsk_not_pressed
+    bra	    dsk_pressed   
+    
+    
+dsk_pressed:
+    movlw   0xFF	    ;if enter button is pressed, 0xFF is moved into the Enter_state byte
+    movwf   Delay_set_key_state, A
+    return
+    
+dsk_not_pressed:
+    movlw   0x00	    ;if enter buttton is not pressed, 0x00 is moved into the Enter_state byte
+    movwf   Delay_set_key_state, A
+    return
+    
     
 Check_length:
     ;set Length_state to 0xFF is index_counter is 16
