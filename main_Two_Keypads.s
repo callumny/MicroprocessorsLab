@@ -122,7 +122,7 @@ start:
         ;movlw 0xFF
 	;movwf PORTJ, A
 	
-	call Display_two_keypad_index   ; displays index on portH
+	;call Display_two_keypad_index   ; displays index on portH
 
 	;;;;;; we have index !!!!
 	;increment index_counter
@@ -155,9 +155,10 @@ start:
 	call Save_current_index
 	
 	;save letter to our word to then output on LCD
-	
 	call	Alphabet_lookup
 	call	Create_word
+	call	Write_display
+	
 	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
@@ -176,7 +177,7 @@ start:
 	goto start
 Display:
     ; needs to read indexes in turn and display them
-    call Write_display
+    ;call Write_display
     
     movlw   100
     call    LCD_delay_ms
@@ -201,7 +202,7 @@ Display_loop:
     ;movwf    read_index, A
     ;movf read_index, 0, 0
     call    Braille_lookup
-    movff final_braille, PORTF, A;show on braille
+    movff final_braille, PORTH, A;show on braille
     ;movwf PORTB, A
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
@@ -210,7 +211,7 @@ Display_loop:
     ;call LCD_delay_ms
     
     movlw 0
-    movwf PORTF, A;show on braille
+    movwf PORTH, A;show on braille
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
