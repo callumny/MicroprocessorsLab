@@ -30,6 +30,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Braille_lookup,\
     Initialise_alphabet,Alphabet_lookup,Create_word,\
     LCD_Setup,Write_display, ASCII_lkup_display,\
+    Check_delay_set_key, Delay_set_key_state,\
     Find_indices_and_button_press_states; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -37,6 +38,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
 psect     udata_acs
 index_counter:  ds  1 
 timer_counter: ds 1
+timer_counter_temp: ds 1
 read_index: ds 1  
 counter:    ds 1
 final_braille: ds 1
@@ -59,55 +61,65 @@ super_setup:
     bra	    timer_set;initialise
     
 timer_set:
+    movlw 0x00
+    movwf TRISJ
+    movlw 0x0F
     
+    
+    ;
+    ;
+    ;DISPLAY 'SET TIMER'
+    ;
+    ;
+    
+    ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
+    movwf PORTJ, A
 ;    ; generates row and column bytes for each keypad
-;    call Find_indices_and_button_press_states
+    call Find_indices_and_button_press_states
 
-;    ; Check if any key has been pressed at all
-;    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-;    cpfslt	zero_byte, A    
-;    bra	timer_set    ; no key pressed 
+    ; Check if any key has been pressed at all
+    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+    cpfslt	zero_byte, A    
+    bra	timer_set    ; no key pressed 
 	    ; at least one key is pressed, continue
 
-;    ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
-;    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-;    cpfsgt	FF_byte, A    
-;    call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
+    ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
+    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+    cpfsgt	FF_byte, A    
+    call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
 	    ; key(s) pressed are only one port, continue 
-;    movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
-;    cpfsgt	FF_byte, A
-;    bra	timer_set
+    movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
+    cpfsgt	FF_byte, A
+    bra	timer_set
 	    ; key(s) pressed are only one port, continue 
 
     ; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
-;    call	Two_keypad_find_index 
+    call	Two_keypad_find_index 
 
     ; Check only one key is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
-;    movf	index, 0, 0
-;    cpfsgt	FF_byte, A           
-;    call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
+    movf	index, 0, 0
+    cpfsgt	FF_byte, A           
+    call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
 	    ; only one key pressed, continue
-;    movf	index, 0, 0 ; same check as above but now branches to start
-;    cpfsgt	invalid_index, A
-;    bra	timer_set
+    movf	index, 0, 0 ; same check as above but now branches to start
+    cpfsgt	invalid_index, A
+    bra	timer_set
 	    ; only one key pressed, continue
 
-    ; Check if enter has been pressed
-;    call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
-
-;    movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
-;    cpfsgt	FF_byte, A 
-;    bra	initialise       ;enter pressed
-	    ; no enter pressed, continue
-
-    ;increment timer_counter
-    ;incf	timer_counter, 1, 0
+    movff index, timer_counter
+    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+    call	LCD_delay_ms
+    call	LCD_delay_ms
 	
-    ;need to check length
+    movlw 0x00
+    movwf PORTJ, A
     
-    ;set delay_seconds, display timer, bra initalise
-    movlw 5
-    movwf timer_counter, A
+    ;
+    ;
+    ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
+    ;
+    ;
+    
     bra initialise 
 initialise: ;more of an initialise stage
 	
@@ -167,6 +179,16 @@ start:
 	bra	start
 		; only one key pressed, continue
 	     
+		
+		
+		
+	;ONLY VALID KEYPRESSES REMAINING
+	call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+	movf	Delay_set_key_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+	cpfsgt	FF_byte, A 
+	bra	super_setup       ;enter pressed
+	
+		
 	; Check if enter has been pressed
 	call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
 	
@@ -236,32 +258,37 @@ Display_loop:
     call Read_each_index
     call    Braille_lookup
     movff final_braille, PORTH, A;show on braille
+    
+    movf timer_counter, 0, 0
+    call Delay_in_seconds
+    ;call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+
+    movlw 0
+    movwf PORTH, A;show on braille
 
     movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
     
-    movlw 0
-    movwf PORTH, A;show on braille
-    movlw 5     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    movf timer_counter, 0, 0
-    call Delay_in_seconds
-    ;call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-   
+    
     decfsz index_counter, A
     bra Display_loop
     return
    
+    
 Delay_in_seconds:
+    movwf timer_counter_temp
+dlp2:    
+    call Delay_one_second
+    decfsz timer_counter_temp, A
+    bra dlp2
+    return
+   
+
+Delay_one_second:
 ; literal stored in w for no. seconds
-    mullw	100
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-    call	LCD_delay_ms
+    movlw	250
     call	LCD_delay_ms
     call	LCD_delay_ms
     call	LCD_delay_ms
