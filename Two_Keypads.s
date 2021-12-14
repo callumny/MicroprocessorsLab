@@ -1,16 +1,15 @@
 #include <xc.inc>
     
     
-extrn LCD_Write_Message, start, setup, LCD_Send_Byte_D
+extrn LCD_Write_Message, start, initialise, LCD_Send_Byte_D
     
 global    Two_keypad_setup, button_pressed_state, \
     Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, \
     Keypad_start_E, Keypad_start_D, \
-    Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E,\
-    Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
-    Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D,\
-    Find_index_D, Display_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
-    Display_E_press_state,  Display_D_press_state,\
+    Recombine_E, Split_NOT_key_byte_E,\
+    Find_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
+    Recombine_D, Split_NOT_key_byte_D,\
+    Find_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
     button_pressed_state,\
     Invalid_button_press_one,\
     Display_two_keypad_index,\
@@ -18,7 +17,8 @@ global    Two_keypad_setup, button_pressed_state, \
     index, Two_keypad_find_index,\
     Invalid_button_press_on_port_D,\
     Invalid_button_press_on_port_E,\
-    Invalid_button_press_two; external subroutines
+    Invalid_button_press_two,\
+    Find_indices_and_button_press_states; external subroutines
     
 psect	udata_acs   ; reserve data space in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -55,23 +55,6 @@ Two_keypad_setup:
     bsf REPU ; turns off all pullups on pins 
     bsf RDPU
     banksel 0
-
-    ;clear the LAT registers (remembers position of pull up registers)
-    clrf LATD, A
-    clrf LATC, A
-    clrf LATH, A
-    clrf LATJ, A
-    clrf LATF, A
-    clrf LATB, A
-    clrf LATE, A ; 
-    
-    ;set all the tristates to ouptuts
-    movlw   0x00
-    movwf   TRISB,A
-    movwf   TRISC,A
-    movwf   TRISH,A
-    movwf   TRISF,A
-    movwf   TRISJ,A
     
     ; set zero_byte to 0x00 for comparisons
     movlw 0x00
@@ -84,13 +67,15 @@ Two_keypad_setup:
     ; set 0F_byte to 0x00 for comparisons
     movlw 0x0F
     movwf OF_byte, A
+    
     ; set button presses to none pressed initially
     movlw 0x00
     movwf button_pressed_E, A
     movwf button_pressed_D, A
     movwf button_pressed_state, A
+    
     ; set invalid_index value
-    movlw 0xff
+    movlw 0xFF
     movwf invalid_index, A
     return
  
@@ -109,9 +94,7 @@ Keypad_start_E:
     
     ;Call a delay to allow the TRIS voltage to settle
     movlw	10		; wait 40us
-    call	LCD_delay_x4us
-    ;movlw 5
-    ;call  LCD_delay_ms	    
+    call	LCD_delay_x4us   
     
     ;Drive output bits low all at once
     movlw	0x00
@@ -127,8 +110,7 @@ Keypad_start_E:
     ;Call a delay to allow the TRIS voltage to settle
     movlw	10		; wait 40us
     call	LCD_delay_x4us
-    ;movlw 5
-    ;call  LCD_delay_ms	    
+    
     ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTE, A
@@ -148,10 +130,7 @@ Split_NOT_key_byte_E:
     
 Recombine_E:
     ;Combines row and column into one byte containing all the information
-    ;below two lines for debugging
-    ;movff   row_byte, PORTC,A
-    ;movff   column_byte, PORTD, A
-    
+   
     movf    row_byte_E, W, A
     iorwf   column_byte_E, 0, 0	    ;compares contents of two addresses, if both bits are a 1, returns a 1, otherwise 0 (places in W reg)
     movwf   key_byte_E, A
@@ -160,14 +139,6 @@ Recombine_E:
     movwf   NOT_key_byte_E, A         ; NOTS the keybyte, useful for checking if button is pressed
     return
     
-Display_key_byte_E:
-    movff   key_byte_E, PORTH, A
-    return
-    
-Display_NOT_key_byte_E:
-    movff   NOT_key_byte_E, PORTC, A
-    return  
-    
 Find_index_E:    
     bra A_check
 
@@ -175,16 +146,6 @@ Found_index_E: ; saves returned value in wreg to index_E byte
     movwf index_E, A
     return    
 
-;Check_pressed_E:
-;    call Split_NOT_key_byte_E
-;    movlw 0x00
-;    cpfsgt NOT_key_byte_low_E, A
-;    retlw 0x00       ; no button pressed returns 0
-;    cpfsgt NOT_key_byte_high_E, A
-;    retlw 0x00       ; no button pressed returns 0  
-;    movlw 0x0F
-;    return
-    
 Is_button_E_pressed: 
     ; saves value in w reg from check_pressed_2_E to button_pressed_state_E
     call Check_pressed_2_E
@@ -316,11 +277,6 @@ P_check:
 Invalid_check_E:
     movf invalid_index, W, A
     goto Found_index_E
- 
-Display_index_E:
-    movff   index_E, PORTC, A
-    return
-
     
 ; ROUTINES FOR KEYPAD D
 Keypad_start_D:
@@ -338,9 +294,7 @@ Keypad_start_D:
     ;Call a delay to allow the TRIS voltage to settle
     movlw	10		; wait 40us
     call	LCD_delay_x4us
-    ;movlw 5
-    ;call  LCD_delay_ms	    
-    
+
     ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTD, A
@@ -355,8 +309,7 @@ Keypad_start_D:
     ;Call a delay to allow the TRIS voltage to settle
     movlw	10		; wait 40us
     call	LCD_delay_x4us
-    ;movlw 5
-    ;call  LCD_delay_ms	    
+	    
     ;Drive output bits low all at once
     movlw	0x00
     movwf	PORTD, A
@@ -389,14 +342,6 @@ Recombine_D:
     movwf   NOT_key_byte_D, A         ; NOTS the keybyte, useful for checking if button is pressed
     return
     
-Display_key_byte_D:
-    movff   key_byte_D, PORTB, A
-    return
-    
-Display_NOT_key_byte_D:
-    movff   NOT_key_byte_D, PORTH, A
-    return  
-    
 Find_index_D:    
     ;movf key_byte, W, A
     bra Q_check
@@ -404,16 +349,6 @@ Find_index_D:
 Found_index_D: ; exists as part
     movwf index_D, A
     return    
-
-;Check_pressed_D:
-;    call Split_NOT_key_byte_D
-;    movlw 0x00
-;    cpfsgt NOT_key_byte_low_D, A
-;    retlw 0x00       ; no button pressed returns 0
-;    cpfsgt NOT_key_byte_high_D, A
-;    retlw 0x00       ; no button pressed returns 0  
-;    movlw 0xF0
-;    return   
     
 Is_button_D_pressed:
     call Check_pressed_2_D
@@ -545,19 +480,6 @@ SF6_check:
 Invalid_check_D:
     movf invalid_index, W, A
     goto Found_index_D
- 
-Display_index_D:
-    movff   index_D, PORTC, A
-    return
-
-Display_E_press_state:
-    movff button_pressed_E, PORTH, A
-    return
-
-Display_D_press_state:
-    movff button_pressed_D, PORTB, A
-    return
-    
     
 E_and_D_press_state:
     movf    button_pressed_E, W, A
@@ -621,8 +543,24 @@ Display_two_keypad_index:
     movff index, PORTH, A
     return    
     
-    
+Find_indices_and_button_press_states:    
+	call	Keypad_start_E
+	call	Keypad_start_D
+	
+	; Recombines row and column bytes for each keypad
+	call	Recombine_E
+	call	Recombine_D
+	
+	; Creating button_press_state to determine which keypad has been pressed
+	call	Is_button_E_pressed ; sets button_pressed_state_E to 0x0F for port E keypad pressed
+	call	Is_button_D_pressed ; sets button_pressed_state_D to 0xF0 for port D keypad pressed
+	call	E_and_D_press_state ;defines button_pressed_state: 0xF0 for portD, 0x0F for port E, 0xFF for both pressed, 0x00 for neither pressed
 
+	; Finding corresponding index for a keypress for each keypad
+        call	Find_index_E   ; finds index of keypress for keypad connected to PORTE
+	call	Find_index_D   ; finds index of keypress for keypad connected to PORTD 
+	return
+	
     
     
 ; ** a few delay routines below here as LCD timing can be quite critical **** from LCD.s
