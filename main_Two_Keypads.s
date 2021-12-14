@@ -48,8 +48,10 @@ rst: 	org 0x0
  	goto	setup
 
 	; ******* Programme FLASH read Setup Code ***********************
-
-setup: 
+;super_setup:
+    ;moves 
+    
+setup: ;more of an initialise stage
 	call	LCD_Setup		;LCD set up does something weird to port B, not sure why when placed lower down
 	movlw 0x00
 	movwf index_counter, A ; tells you what index we are at
@@ -126,23 +128,31 @@ start:
 
 	;;;;;; we have index !!!!
 	;increment index_counter
-	movlw 1
-	addwf index_counter, A
+	
 	
 	call Check_enter ; writes the state to enter_length_check_byte
+	
+	
+	;movf Enter_state, 0, 0 ; same check as above but now branches to start
+	;cpfsgt FF_byte, A ; no enter pressed
+	;decf index_counter, 1  ; decrements word length by one to not include enter key press as an extra leter count in the word
+	
+	
+	
+	movf Enter_state, 0, 0 ; same check as above but now branches to start
+	cpfsgt FF_byte, A 
+	bra Display       ;enter pressed
+	; no enter pressed
+	
+	
+	
+	
+	
+	movlw 1
+	addwf index_counter, A
+	;continue to check length
 	call Check_length
 	
-	movf Enter_state, 0, 0 ; same check as above but now branches to start
-	cpfsgt FF_byte, A ; no enter pressed
-	decf index_counter, 1  ; decrements word length by one to not include enter key press as an extra leter count in the word
-	
-	
-	
-	movf Enter_state, 0, 0 ; same check as above but now branches to start
-	cpfsgt FF_byte, A ; no enter pressed
-	bra Display       ;enter pressed
-	;continue to check length
-
 	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
 	call Save_current_index;i want to save the index of the 16th letter and then go onto display;  ;bra Display;display subroutine ;length i gtretaer than 16
@@ -181,6 +191,11 @@ start:
 Display:
     ; needs to read indexes in turn and display them
     ;call Write_display
+    movf index_counter, 0, 0  
+    cpfslt zero_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
+    bra start;display subroutine ;length i gtretaer than 16
+	
+    
     
     movlw   100
     call    LCD_delay_ms
