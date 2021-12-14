@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,Write_display
+global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,Write_display, ASCII_lkup_display
 
 extrn	counter,final_alphabet,final_braille,index,read_index,index_counter,LCD_Write_Message,LCD_delay_ms,LCD_Send_Byte_D
 
@@ -108,3 +108,8 @@ Braille_lookup:
 
     return
     
+ASCII_lkup_display:
+    call	Alphabet_lookup
+    call	Create_word
+    call	Write_display
+    return
