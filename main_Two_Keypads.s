@@ -1,17 +1,16 @@
 #include <xc.inc>
 
-global	start, setup, index_counter, read_index, counter,final_braille,final_alphabet
+global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
 extrn    Two_keypad_setup, button_pressed_state, \
     Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, Check_pressed_2_E, \
     Keypad_start_E, Keypad_start_D, \
-    Recombine_E, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E,\
-    Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
-    Recombine_D, Split_NOT_key_byte_D, Display_key_byte_D, Display_NOT_key_byte_D,\
-    Find_index_D, Display_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
-    Display_E_press_state, Display_D_press_state,\
+    Recombine_E, Split_NOT_key_byte_E,\
+    Find_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E,\
+    Recombine_D, Split_NOT_key_byte_D,\
+    Find_index_D, key_byte_D, NOT_key_byte_D, NOT_key_byte_low_D, NOT_key_byte_high_D, index_D,\
     button_pressed_state,\
     Invalid_button_press_one,\
     Display_two_keypad_index,\
@@ -30,173 +29,195 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_braille,\
     Braille_lookup,\
     Initialise_alphabet,Alphabet_lookup,Create_word,\
-    LCD_Setup,Write_display, ASCII_lkup_display; external subroutines
+    LCD_Setup,Write_display, ASCII_lkup_display,\
+    Find_indices_and_button_press_states; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 psect     udata_acs
-index_counter:  ds  1  
+index_counter:  ds  1 
+timer_counter: ds 1
 read_index: ds 1  
 counter:    ds 1
 final_braille: ds 1
 final_alphabet: ds 1
-index_counter_LCD: ds 1
     
     
 psect	code, abs	
 rst: 	org 0x0
- 	goto	setup
+ 	goto	super_setup
 
 	; ******* Programme FLASH read Setup Code ***********************
-;super_setup:
-    ;moves 
+super_setup:
+    call    LCD_Setup
+    call    Initialise_braille
+    call    Initialise_alphabet
+    call    Two_keypad_setup
+    movlw   0x00
+    movwf   timer_counter, A
+
+    bra	    timer_set;initialise
     
-setup: ;more of an initialise stage
-	call	LCD_Setup		;LCD set up does something weird to port B, not sure why when placed lower down
-	movlw 0x00
-	movwf index_counter, A ; tells you what index we are at
-	;;call	Two_keypad_setup	; setup keyboard
-	call    Two_keypad_setup
+timer_set:
+    
+;    ; generates row and column bytes for each keypad
+;    call Find_indices_and_button_press_states
+
+;    ; Check if any key has been pressed at all
+;    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+;    cpfslt	zero_byte, A    
+;    bra	timer_set    ; no key pressed 
+	    ; at least one key is pressed, continue
+
+;    ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
+;    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+;    cpfsgt	FF_byte, A    
+;    call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
+	    ; key(s) pressed are only one port, continue 
+;    movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
+;    cpfsgt	FF_byte, A
+;    bra	timer_set
+	    ; key(s) pressed are only one port, continue 
+
+    ; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
+;    call	Two_keypad_find_index 
+
+    ; Check only one key is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
+;    movf	index, 0, 0
+;    cpfsgt	FF_byte, A           
+;    call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
+	    ; only one key pressed, continue
+;    movf	index, 0, 0 ; same check as above but now branches to start
+;    cpfsgt	invalid_index, A
+;    bra	timer_set
+	    ; only one key pressed, continue
+
+    ; Check if enter has been pressed
+;    call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+
+;    movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+;    cpfsgt	FF_byte, A 
+;    bra	initialise       ;enter pressed
+	    ; no enter pressed, continue
+
+    ;increment timer_counter
+    ;incf	timer_counter, 1, 0
 	
-	call	Initialise_braille
-	call	Initialise_alphabet
+    ;need to check length
+    
+    ;set delay_seconds, display timer, bra initalise
+    movlw 5
+    movwf timer_counter, A
+    bra initialise 
+initialise: ;more of an initialise stage
 	
-	call    Set_saving_lfsr
-	call    Set_reading_lfsr
-	
-	
-	goto	start
-	
+    call    LCD_Setup          ; just acts as clear here
+
+    call    Set_saving_lfsr
+    call    Set_reading_lfsr
+
+    movlw   0x00
+    movwf   index_counter, A ; number of letters that have been typed
+
+    ;set all the tristates to ouptuts
+    movlw   0x00
+    movwf   TRISC,A ; index_counter is displayed on PORTC
+    movwf   TRISH,A ; Braille characters are read onto PORTH
+    movwf   TRISJ,A ; 0xFF on PORTJ while display is running, also shows error lights for invalid keypresses
+
+    goto    start
+
 	; ******* Main programme ****************************************
 start: 	
     
+	; Set PORTB and PORTF to output
+        movlw	0x00
+	movwf	PORTH, A	; Lowers all pegs 
+	movwf	PORTJ, A	; set PORTJ back to 0x00 after display has finished
 	
-        movlw 0x00
-	movwf TRISB, A	;
-	movwf TRISF, A	;
+	; generates row and column bytes for each keypad
+	call Find_indices_and_button_press_states
 	
-	movwf PORTH, A	;
-	movwf PORTJ, A	;
-	;movwf PORTB, A	; when this line is commented out the correct braille displays on portB
-	; but i only want it to show braille when im holding the keypress down, cant seem to gte that to work
-	
-	call Keypad_start_E
-	call Recombine_E
-	call Keypad_start_D
-	call Recombine_D
-	
-	call Is_button_E_pressed
-	call Is_button_D_pressed
-	;call Display_E_press_state
-	;call Display_D_press_state
-	call E_and_D_press_state
-	;call Display_E_and_D_press_state ; F0 for portD, 0F for port E, FF for both pressed, 00 for neither pressed
+	; Check if any key has been pressed at all
+	movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+	cpfslt	zero_byte, A    
+	bra	start    ; no key pressed 
+		; at least one key is pressed, continue
 
-        call Find_index_E   ; as for one keypad
-	call Find_index_D   ; as for one keypad 
+	; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
+	movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+	cpfsgt	FF_byte, A    
+	call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
+		; key(s) pressed are only one port, continue 
+	movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
+	cpfsgt	FF_byte, A
+	bra	start
+		; key(s) pressed are only one port, continue 
 	
-	
-	movf button_pressed_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfslt zero_byte, A    ;   skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed
-	bra start    
-	
-	;check the buttons pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
-	movf button_pressed_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed       ; 
-	cpfsgt FF_byte, A    ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only one button on D or E is pressed, i.e valid press
-	call Invalid_button_press_one ; shows 0x11, error light for if two buttons have been pressed, one on each keypad
-	
-	movf button_pressed_state, 0, 0 ; same check as above but now branches to start
-	cpfsgt FF_byte, A
-	bra start
-
 	; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
-	call Two_keypad_find_index
+	call	Two_keypad_find_index 
 	
-	;check only one button is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
-	movf index, 0, 0
-	cpfsgt invalid_index, A            ;   skip if f greater than w, i.e skip if FF byte is greater than button_pressed , which occurs whenever only on button on D or E is pressed, i.e valid press
-	call Invalid_button_press_two      ; shows 0x22, error light for if two buttons have been pressed on one keypad
-	movf index, 0, 0
-	cpfsgt invalid_index, A
-	bra start
+	; Check only one key is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
+	movf	index, 0, 0
+	cpfsgt	FF_byte, A           
+	call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
+		; only one key pressed, continue
+	movf	index, 0, 0 ; same check as above but now branches to start
+	cpfsgt	invalid_index, A
+	bra	start
+		; only one key pressed, continue
+	     
+	; Check if enter has been pressed
+	call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
 	
-	; lights to show if checks have been passed
-        ;movlw 0xFF
-	;movwf PORTJ, A
-	
-	;call Display_two_keypad_index   ; displays index on portH
-
-	;;;;;; we have index !!!!
+	movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+	cpfsgt	FF_byte, A 
+	bra	Display       ;enter pressed
+		; no enter pressed, continue
+	    
 	;increment index_counter
+	incf	index_counter, 1, 0
 	
+	; Check length of word is less than 16 letters, once 16th letter is typed begin display subroutine
+	call	Check_length
 	
-	call Check_enter ; writes the state to enter_length_check_byte
+	movf	Length_state, 0, 0 
+	cpfsgt	FF_byte, A    
+	call	Save_current_index ; save index for 16th letter
 	
+	movf	Length_state, 0, 0 
+	cpfsgt	FF_byte, A    
+	call	ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
 	
-	;movf Enter_state, 0, 0 ; same check as above but now branches to start
-	;cpfsgt FF_byte, A ; no enter pressed
-	;decf index_counter, 1  ; decrements word length by one to not include enter key press as an extra leter count in the word
+	movf	Length_state, 0, 0 
+	cpfsgt	FF_byte, A    
+	bra	Display
+		; word length less than 16 letters, continue
 	
-	
-	
-	movf Enter_state, 0, 0 ; same check as above but now branches to start
-	cpfsgt FF_byte, A 
-	bra Display       ;enter pressed
-	; no enter pressed
-	
-	
-	
-	
-	
-	movlw 1
-	addwf index_counter, A
-	;continue to check length
-	call Check_length
-	
-	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
-	call Save_current_index;i want to save the index of the 16th letter and then go onto display;  ;bra Display;display subroutine ;length i gtretaer than 16
-	
-	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
-	call ASCII_lkup_display
-	;continue
-	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
-	bra Display;display subroutine ;length i gtretaer than 16
-	
+	; display index_counter on PORTC
 	call	Display_index_counter 
 	
-	; OUR INDEX IS NOT AN ENTER AND OUR WORD IS NOT TOO LONG
-	call Save_current_index
+	; Valid key press which is not the enter key and total word length is less than 16
+	call	Save_current_index
 	
-	;save letter to our word to then output on LCD
-	call ASCII_lkup_display
+	; Translate index to ASCII and then save ASCII in word, then output letter on LCD
+	call	ASCII_lkup_display
 	
-	movf index, 0, 0   ; moves value to w
-	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
-        ; stop calling braille table because braille table is overflowing
-	;call Braille_table
-	;movwf PORTF, A
-	;DELAY
-	movlw 100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+	movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
 
-	call LCD_delay_ms; external subroutines
-	call LCD_delay_ms; external subroutines
-	;call LCD_delay_ms; external subroutines
-	nop
-	;movlw 0x00
-	;movwf PORTF, A
-	goto start
+	call	LCD_delay_ms
+	call	LCD_delay_ms
+	
+
+	goto	start
 Display:
     ; needs to read indexes in turn and display them
-    ;call Write_display
-    movf index_counter, 0, 0  
-    cpfslt zero_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
-    bra start;display subroutine ;length i gtretaer than 16
+    
+    ; word length is 0, no letters have been entered befor enter key was pressed, branch to start
+    movf	index_counter, 0, 0  
+    cpfslt	zero_byte, A    
+    bra		start
 	
-    
-    
     movlw   100
     call    LCD_delay_ms
     
@@ -205,48 +226,46 @@ Display:
     
     ;;;;;;DELAY
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call LCD_delay_ms; external subroutines
-    call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms; external subroutines
-    nop
-    bra setup	
+    call LCD_delay_ms
+    call LCD_delay_ms
+  
+    bra initialise	
     
 Display_loop:
-    ;movlw 0x01
-    ;movwf PORTB, A
     
     call Read_each_index
-    ;movlw 1
-    ;movwf    read_index, A
-    ;movf read_index, 0, 0
     call    Braille_lookup
     movff final_braille, PORTH, A;show on braille
-    ;movwf PORTB, A
+
     movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-    ;call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms
     
     movlw 0
     movwf PORTH, A;show on braille
-    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call LCD_delay_ms; external subroutines
-    call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-    ;call LCD_delay_ms; external subroutines    
-    nop
+    movlw 5     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    movf timer_counter, 0, 0
+    call Delay_in_seconds
+    ;call LCD_delay_ms; external subroutines
+    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+   
     decfsz index_counter, A
     bra Display_loop
     return
    
-    ;nop ;comment out for sf4 key to work, for some reason the number of lines before PCL line affects the last look up possible in the look up table  
-
-    ;end Braille_table
-    ;
-    ;
-
-    
-    
-end start
+Delay_in_seconds:
+; literal stored in w for no. seconds
+    mullw	100
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    return
 
 
