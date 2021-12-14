@@ -30,7 +30,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_braille,\
     Braille_lookup,\
     Initialise_alphabet,Alphabet_lookup,Create_word,\
-    LCD_Setup,LCD_word_display; external subroutines
+    LCD_Setup,Write_display; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -40,6 +40,7 @@ read_index: ds 1
 counter:    ds 1
 final_braille: ds 1
 final_alphabet: ds 1
+index_counter_LCD: ds 1
     
     
 psect	code, abs	
@@ -170,12 +171,12 @@ start:
 	call LCD_delay_ms; external subroutines
 	;call LCD_delay_ms; external subroutines
 	nop
-	movlw 0x00
-	movwf PORTF, A
+	;movlw 0x00
+	;movwf PORTF, A
 	goto start
 Display:
     ; needs to read indexes in turn and display them
-    call LCD_word_display
+    call Write_display
     
     movlw   100
     call    LCD_delay_ms
@@ -200,7 +201,7 @@ Display_loop:
     ;movwf    read_index, A
     ;movf read_index, 0, 0
     call    Braille_lookup
-    movff final_braille, PORTB, A;show on braille
+    movff final_braille, PORTF, A;show on braille
     ;movwf PORTB, A
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
@@ -209,7 +210,7 @@ Display_loop:
     ;call LCD_delay_ms
     
     movlw 0
-    movwf PORTB, A;show on braille
+    movwf PORTF, A;show on braille
     movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
