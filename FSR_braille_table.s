@@ -90,34 +90,16 @@ Create_word:	    ;takes the letter in final_alphabet and puts it in the correcti
     
     
 Write_display:
+	banksel	6
 	lfsr	2,word
-	movlw	low highword(word)	; address of data in PM
-	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
-	movlw	high(word)	; address of data in PM
-	movwf	TBLPTRH, A		; load high byte to TBLPTRH
-	movlw	low(word)	; address of data in PM
-	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+	movf	index_counter,W
+	addlw	-1
+	movf	PLUSW2,W
+	call	LCD_Send_Byte_D
+	banksel 0 
 	
-	movf	index_counter, W
-	addwf	TBLPTRL, F
-	movlw	0x0
-	addwfc	TBLPTRH, F
-	addwfc	TBLPTRU, F		    ;this needs some messing around withy
-	
-	movf	index_counter
-	call	LCD_Write_Message
 	return
 	
-;LCD_Loop_message:
-;	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
-;	movf    TABLAT, W, A
-;	call    LCD_Send_Byte_D
-;	decfsz  index_counter, A
-;	bra	    LCD_Loop_message
-;	movlw	100
-;	call	LCD_delay_ms
-;	return
-    
 Braille_lookup:
     ;need to initialise the fsr before doing anything
     lfsr    2, myArray_braille
