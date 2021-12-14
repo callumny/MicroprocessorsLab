@@ -30,7 +30,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_braille,\
     Braille_lookup,\
     Initialise_alphabet,Alphabet_lookup,Create_word,\
-    LCD_Setup,Write_display; external subroutines
+    LCD_Setup,Write_display, ASCII_lkup_display; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -136,6 +136,8 @@ start:
 	cpfsgt FF_byte, A ; no enter pressed
 	decf index_counter, 1  ; decrements word length by one to not include enter key press as an extra leter count in the word
 	
+	
+	
 	movf Enter_state, 0, 0 ; same check as above but now branches to start
 	cpfsgt FF_byte, A ; no enter pressed
 	bra Display       ;enter pressed
@@ -144,6 +146,10 @@ start:
 	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
 	call Save_current_index;i want to save the index of the 16th letter and then go onto display;  ;bra Display;display subroutine ;length i gtretaer than 16
+	
+	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
+	call ASCII_lkup_display
 	;continue
 	movf Length_state, 0, 0 ; 0x00 for no button pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
 	cpfsgt FF_byte, A    ;  skip if f less than w, i.e skip if zero byte is less than button_pressed , which occurs whenever a button is pressed  
@@ -155,10 +161,7 @@ start:
 	call Save_current_index
 	
 	;save letter to our word to then output on LCD
-	call	Alphabet_lookup
-	call	Create_word
-	call	Write_display
-	
+	call ASCII_lkup_display
 	
 	movf index, 0, 0   ; moves value to w
 	rlncf index, 0, 0  ; moves 2 x index to W, no carr bit has two most significant bits are zero anyways
@@ -204,7 +207,7 @@ Display_loop:
     call    Braille_lookup
     movff final_braille, PORTH, A;show on braille
     ;movwf PORTB, A
-    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
     ;call LCD_delay_ms; external subroutines
