@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,LCD_word_display
+global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,Write_display
 
 extrn	counter,final_alphabet,final_braille,index,read_index,index_counter,LCD_Write_Message,LCD_delay_ms,LCD_Send_Byte_D
 
@@ -89,7 +89,8 @@ Create_word:	    ;takes the letter in final_alphabet and puts it in the correcti
     return
     
     
-WriteDisplay:
+Write_display:
+	lfsr	2,word
 	movlw	low highword(word)	; address of data in PM
 	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
 	movlw	high(word)	; address of data in PM
@@ -103,19 +104,19 @@ WriteDisplay:
 	addwfc	TBLPTRH, F
 	addwfc	TBLPTRU, F		    ;this needs some messing around withy
 	
-	movlw	index_counter
+	movf	index_counter
 	call	LCD_Write_Message
 	return
 	
 ;LCD_Loop_message:
- ;   tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
-  ;  movf    TABLAT, W, A
-   ; call    LCD_Send_Byte_D
-    ;decfsz  index_counter, A
-    ;bra	    LCD_Loop_message
-    ;movlw	100
-    ;call	LCD_delay_ms
-    ;return
+;	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
+;	movf    TABLAT, W, A
+;	call    LCD_Send_Byte_D
+;	decfsz  index_counter, A
+;	bra	    LCD_Loop_message
+;	movlw	100
+;	call	LCD_delay_ms
+;	return
     
 Braille_lookup:
     ;need to initialise the fsr before doing anything
