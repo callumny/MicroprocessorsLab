@@ -61,17 +61,21 @@ super_setup:
     bra	    timer_set;initialise
     
 timer_set:
+    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+    call	LCD_delay_ms
+    call	LCD_delay_ms
     movlw 0x00
     movwf TRISJ
     movlw 0x0F
     
+	
     
     ;
     ;
     ;DISPLAY 'SET TIMER'
     ;
     ;
-    
+
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
     movwf PORTJ, A
 ;    ; generates row and column bytes for each keypad
@@ -142,96 +146,96 @@ initialise: ;more of an initialise stage
 	; ******* Main programme ****************************************
 start: 	
     
-	; Set PORTB and PORTF to output
-        movlw	0x00
-	movwf	PORTH, A	; Lowers all pegs 
-	movwf	PORTJ, A	; set PORTJ back to 0x00 after display has finished
-	
-	; generates row and column bytes for each keypad
-	call Find_indices_and_button_press_states
-	
-	; Check if any key has been pressed at all
-	movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfslt	zero_byte, A    
-	bra	start    ; no key pressed 
-		; at least one key is pressed, continue
+    ; Set PORTB and PORTF to output
+    movlw	0x00
+    movwf	PORTH, A	; Lowers all pegs 
+    movwf	PORTJ, A	; set PORTJ back to 0x00 after display has finished
 
-	; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
-	movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
-	cpfsgt	FF_byte, A    
-	call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
-		; key(s) pressed are only one port, continue 
-	movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
-	cpfsgt	FF_byte, A
-	bra	start
-		; key(s) pressed are only one port, continue 
-	
-	; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
-	call	Two_keypad_find_index 
-	
-	; Check only one key is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
-	movf	index, 0, 0
-	cpfsgt	FF_byte, A           
-	call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
-		; only one key pressed, continue
-	movf	index, 0, 0 ; same check as above but now branches to start
-	cpfsgt	invalid_index, A
-	bra	start
-		; only one key pressed, continue
-	     
-		
-		
-		
-	;ONLY VALID KEYPRESSES REMAINING
-	call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
-	movf	Delay_set_key_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
-	cpfsgt	FF_byte, A 
-	bra	super_setup       ;enter pressed
-	
-		
-	; Check if enter has been pressed
-	call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
-	
-	movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
-	cpfsgt	FF_byte, A 
-	bra	Display       ;enter pressed
-		; no enter pressed, continue
-	    
-	;increment index_counter
-	incf	index_counter, 1, 0
-	
-	; Check length of word is less than 16 letters, once 16th letter is typed begin display subroutine
-	call	Check_length
-	
-	movf	Length_state, 0, 0 
-	cpfsgt	FF_byte, A    
-	call	Save_current_index ; save index for 16th letter
-	
-	movf	Length_state, 0, 0 
-	cpfsgt	FF_byte, A    
-	call	ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
-	
-	movf	Length_state, 0, 0 
-	cpfsgt	FF_byte, A    
-	bra	Display
-		; word length less than 16 letters, continue
-	
-	; display index_counter on PORTC
-	call	Display_index_counter 
-	
-	; Valid key press which is not the enter key and total word length is less than 16
-	call	Save_current_index
-	
-	; Translate index to ASCII and then save ASCII in word, then output letter on LCD
-	call	ASCII_lkup_display
-	
-	movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+    ; generates row and column bytes for each keypad
+    call Find_indices_and_button_press_states
 
-	call	LCD_delay_ms
-	call	LCD_delay_ms
-	
+    ; Check if any key has been pressed at all
+    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+    cpfslt	zero_byte, A    
+    bra	start    ; no key pressed 
+	    ; at least one key is pressed, continue
 
-	goto	start
+    ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
+    movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
+    cpfsgt	FF_byte, A    
+    call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
+	    ; key(s) pressed are only one port, continue 
+    movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
+    cpfsgt	FF_byte, A
+    bra	start
+	    ; key(s) pressed are only one port, continue 
+
+    ; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
+    call	Two_keypad_find_index 
+
+    ; Check only one key is pressed on a given keypad, e.g if two buttons are pressed on keypad E then show error
+    movf	index, 0, 0
+    cpfsgt	FF_byte, A           
+    call	Invalid_button_press_two      ; multiple keys have been pressed on one keypad, 0x22 error light on PORTJ
+	    ; only one key pressed, continue
+    movf	index, 0, 0 ; same check as above but now branches to start
+    cpfsgt	invalid_index, A
+    bra	start
+	    ; only one key pressed, continue
+
+
+
+
+    ;ONLY VALID KEYPRESSES REMAINING
+    call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+    movf	Delay_set_key_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+    cpfsgt	FF_byte, A 
+    bra	super_setup       ;enter pressed
+
+
+    ; Check if enter has been pressed
+    call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+
+    movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+    cpfsgt	FF_byte, A 
+    bra	Display       ;enter pressed
+	    ; no enter pressed, continue
+
+    ;increment index_counter
+    incf	index_counter, 1, 0
+
+    ; Check length of word is less than 16 letters, once 16th letter is typed begin display subroutine
+    call	Check_length
+
+    movf	Length_state, 0, 0 
+    cpfsgt	FF_byte, A    
+    call	Save_current_index ; save index for 16th letter
+
+    movf	Length_state, 0, 0 
+    cpfsgt	FF_byte, A    
+    call	ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
+
+    movf	Length_state, 0, 0 
+    cpfsgt	FF_byte, A    
+    bra	Display
+	    ; word length less than 16 letters, continue
+
+    ; display index_counter on PORTC
+    call	Display_index_counter 
+
+    ; Valid key press which is not the enter key and total word length is less than 16
+    call	Save_current_index
+
+    ; Translate index to ASCII and then save ASCII in word, then output letter on LCD
+    call	ASCII_lkup_display
+
+    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
+
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+
+
+    goto	start
 Display:
     ; needs to read indexes in turn and display them
     
