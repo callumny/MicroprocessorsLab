@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet
+global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet,timer_counter
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -35,7 +35,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Print_OM,\
     Display_clear,\
     Print_ST,\
-    Set_Second_line
+    Set_Second_line,\
+    Write_delay
     ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -138,6 +139,8 @@ timer_set_loop:
     ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
     ;
     ;
+    call    Write_delay
+    
     bra	timer_set_loop
     
     call Delay_between_keypresses
