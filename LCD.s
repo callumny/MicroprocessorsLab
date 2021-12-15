@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global  LCD_Setup, LCD_Write_Message, Display_clear, LCD_delay_ms, LCD_Send_Byte_D
+global  LCD_Setup, LCD_Write_Message, Display_clear, LCD_delay_ms, LCD_Send_Byte_D,Set_Second_line
 
 psect	udata_acs   ; named variables in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -8,11 +8,12 @@ LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
 LCD_tmp:	ds 1   ; reserve 1 byte for temporary use
 LCD_counter:	ds 1   ; reserve 1 byte for counting through nessage
+Second_line_counter:	ds  1
 
 	LCD_E	EQU 5	; LCD enable bit
     	LCD_RS	EQU 4	; LCD register select bit
 
-psect	lcd_code,class=CODE
+psect	LCD_code,class=CODE
     
 LCD_Setup:
 	clrf    LATB, A
@@ -44,8 +45,13 @@ LCD_Setup:
 	call	LCD_Send_Byte_I
 	movlw	10		; wait 40us
 	call	LCD_delay_x4us
+	
+	;movlw	16
+	;movwf	Second_line_counter	    ;sets a counter to tell the LCD when to go onto the next line
+
 	return
 
+	
 LCD_Write_Message:	    ; Message stored at FSR2, length stored in W
 	movwf   LCD_counter, A
 LCD_Loop_message:
@@ -53,8 +59,27 @@ LCD_Loop_message:
 	call    LCD_Send_Byte_D
 	decfsz  LCD_counter, A
 	bra	LCD_Loop_message
+	
+	movlw	1
+	call	LCD_delay_ms
+	;dcfsnz	Second_line_counter
+	;bra	Set_Second_line
+	
 	return
 
+Set_Second_line:
+	
+	movlw	11000000B		    ;set 2nd line on LCD
+	bra	LCD_Send_Byte_I
+	
+	movlw	10		
+	call	LCD_delay_x4us
+
+	movlw	1
+	bra	LCD_Write_Message
+	
+	return
+	
 LCD_Send_Byte_I:	    ; Transmits byte stored in W to instruction reg
 	movwf   LCD_tmp, A
 	swapf   LCD_tmp, W, A   ; swap nibbles, high nibble goes first
@@ -137,6 +162,8 @@ lcdlp1:	decf 	LCD_cnt_l, F, A	; no carry when 0x00 -> 0xff
 Display_clear:
 	movlw	00000001B	; display clear
 	call	LCD_Send_Byte_I
+	call	LCD_delay_x4us
+	return
 	
 	
 ;button_delay:
