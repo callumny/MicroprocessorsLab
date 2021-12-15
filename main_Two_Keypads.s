@@ -34,7 +34,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Find_indices_and_button_press_states,\
     Print_OM,\
     Display_clear,\
-    Print_ST
+    Print_ST,\
+    Set_Second_line
     ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -66,8 +67,7 @@ super_setup:
     call    Delay_one_second
     
     ;call    Display_clear
-    call    LCD_Setup
-    call    Print_ST
+    
     
     ;call    Delay_one_second
     ;call    Delay_one_second
@@ -75,37 +75,17 @@ super_setup:
     bra	    timer_set;initialise
     
 timer_set:
-
-    
-    movlw 0x00
-    movwf TRISJ
-    movlw   0x00
+    call    LCD_Setup
+    call    Print_ST
+    call Set_Second_line
+    movlw   0x05
     movwf   timer_counter, A
-    
-    
-    ;
-    ;
-    ; SET LSFRS FOR TIMER MESSAGES
-    ;
-    ;
-    ;call Set_set_timer_lfsr
-    ;call Set_timer_set_to_lfsr
-    
-    movlw	100      ; this delay is necessary to ensure the orrct keypress sets the delay_timer, otherwise sf5 index of 31 kept setting the delay time
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-    
     movlw 0x0F
-    movwf PORTJ, A ; lets user know they can set time now
-	
+    movwf PORTJ, A
     
-    ;
-    ;
-    ;DISPLAY 'SET TIMER'
-    ;
-    ;
-
-    
+timer_set_loop:
+    call Delay_between_keypresses
+   
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
     
 ;    ; generates row and column bytes for each keypad
@@ -114,7 +94,7 @@ timer_set:
     ; Check if any key has been pressed at all
     movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
     cpfslt	zero_byte, A    
-    bra	timer_set    ; no key pressed 
+    bra	timer_set_loop    ; no key pressed 
 	    ; at least one key is pressed, continue
 
     ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
@@ -124,7 +104,7 @@ timer_set:
 	    ; key(s) pressed are only one port, continue 
     movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
     cpfsgt	FF_byte, A
-    bra	timer_set
+    bra	timer_set_loop
 	    ; key(s) pressed are only one port, continue 
 
     ; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
@@ -137,20 +117,34 @@ timer_set:
 	    ; only one key pressed, continue
     movf	index, 0, 0 ; same check as above but now branches to start
     cpfsgt	invalid_index, A
-    bra	timer_set
+    bra	timer_set_loop
 	    ; only one key pressed, continue
 
+    	    
+    ; VALID KEY PRESS
+    call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+
+    movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
+    cpfsgt	FF_byte, A 
+    bra initialise      ;enter pressed
+ 
+    
+    
+    
     movff index, timer_counter
-    call Delay_between_keypresses
-	
-    movlw 0x00
-    movwf PORTJ, A
     
     ;
     ;
     ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
     ;
-    ;delay fpr enough time to read e.g  5 seconds
+    ;
+    bra	timer_set_loop
+    
+    call Delay_between_keypresses
+	
+    movlw 0x00
+    movwf PORTJ, A
+    
     
     bra initialise 
 initialise: ;more of an initialise stage
