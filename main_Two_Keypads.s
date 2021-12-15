@@ -67,7 +67,7 @@ super_setup:
     
     ;call    Display_clear
     call    LCD_Setup
-    ;call    Print_ST
+    call    Print_ST
     
     ;call    Delay_one_second
     ;call    Delay_one_second
