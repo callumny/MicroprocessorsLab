@@ -83,8 +83,9 @@ timer_set:
     movwf   timer_counter, A
     movlw 0x0F
     movwf PORTJ, A
-    
+
 timer_set_loop:
+
     call Delay_between_keypresses
    
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
@@ -131,15 +132,14 @@ timer_set_loop:
  
     
     
-    
     movff index, timer_counter
-    
+    call ASCII_lkup_display ; represents kind of what we want to do
     ;
     ;
     ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
     ;
     ;
-    call    Write_delay
+    ;call    Write_delay
     
     bra	timer_set_loop
     
