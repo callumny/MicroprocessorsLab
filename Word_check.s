@@ -1,11 +1,11 @@
 #include <xc.inc>
     
 global Check_enter, Check_length, Enter_state, Length_state,\
-    Display_index_counter, Display_index_counter_word,\
+    Display_index_counter, Display_running,\
     Check_enter, Check_length,\
     Enter_state, Length_state,\
-    Check_delay_set_key, Delay_set_key_state,\
-    Display_index_counter_word
+    Check_delay_set_key, Delay_set_key_state
+    
 
 extrn LCD_Write_Message, start, LCD_Send_Byte_D, index_counter, index
     
@@ -74,9 +74,8 @@ length_short:
     movwf   Length_state, A	    ; moves 0x00 into Length_state byte
     return
 
-Display_index_counter_word:
-    ;movff index_counter, PORTJ, A
-    movlw 0xff
+Display_running:
+    movlw 0xFF
     movwf PORTJ, A
     return
     
