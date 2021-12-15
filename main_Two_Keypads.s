@@ -23,7 +23,7 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Display_index_counter,\
     Check_enter, Check_length,\
     Enter_state, Length_state,\
-    Display_index_counter_word,\
+    Display_running,\
     Save_current_index, Set_saving_lfsr, Set_reading_lfsr,\
     Read_each_index,\
     Initialise_braille,\
@@ -31,7 +31,11 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_alphabet,Alphabet_lookup,Create_word,\
     LCD_Setup,Write_display, ASCII_lkup_display,\
     Check_delay_set_key, Delay_set_key_state,\
-    Find_indices_and_button_press_states; external subroutines
+    Find_indices_and_button_press_states,\
+    Print_OM,\
+    Display_clear,\
+    Print_ST
+    ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -55,19 +59,44 @@ super_setup:
     call    Initialise_braille
     call    Initialise_alphabet
     call    Two_keypad_setup
-    movlw   0x00
-    movwf   timer_counter, A
 
+   
+    call    Print_OM
+    call    Delay_one_second
+    call    Delay_one_second
+    
+    ;call    Display_clear
+    call    LCD_Setup
+    ;call    Print_ST
+    
+    ;call    Delay_one_second
+    ;call    Delay_one_second
+    
     bra	    timer_set;initialise
     
 timer_set:
-    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call	LCD_delay_ms
-    call	LCD_delay_ms
+
+    
     movlw 0x00
     movwf TRISJ
-    movlw 0x0F
+    movlw   0x00
+    movwf   timer_counter, A
     
+    
+    ;
+    ;
+    ; SET LSFRS FOR TIMER MESSAGES
+    ;
+    ;
+    ;call Set_set_timer_lfsr
+    ;call Set_timer_set_to_lfsr
+    
+    movlw	100      ; this delay is necessary to ensure the orrct keypress sets the delay_timer, otherwise sf5 index of 31 kept setting the delay time
+    call	LCD_delay_ms
+    call	LCD_delay_ms
+    
+    movlw 0x0F
+    movwf PORTJ, A ; lets user know they can set time now
 	
     
     ;
@@ -76,8 +105,9 @@ timer_set:
     ;
     ;
 
+    
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
-    movwf PORTJ, A
+    
 ;    ; generates row and column bytes for each keypad
     call Find_indices_and_button_press_states
 
@@ -111,9 +141,7 @@ timer_set:
 	    ; only one key pressed, continue
 
     movff index, timer_counter
-    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call	LCD_delay_ms
-    call	LCD_delay_ms
+    call Delay_between_keypresses
 	
     movlw 0x00
     movwf PORTJ, A
@@ -122,7 +150,7 @@ timer_set:
     ;
     ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
     ;
-    ;
+    ;delay fpr enough time to read e.g  5 seconds
     
     bra initialise 
 initialise: ;more of an initialise stage
@@ -190,7 +218,7 @@ start:
     call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
     movf	Delay_set_key_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
     cpfsgt	FF_byte, A 
-    bra	super_setup       ;enter pressed
+    bra	timer_set       ;enter pressed
 
 
     ; Check if enter has been pressed
@@ -202,38 +230,34 @@ start:
 	    ; no enter pressed, continue
 
     ;increment index_counter
-    incf	index_counter, 1, 0
+    incf    index_counter, 1, 0
 
     ; Check length of word is less than 16 letters, once 16th letter is typed begin display subroutine
-    call	Check_length
+    call    Check_length
 
-    movf	Length_state, 0, 0 
-    cpfsgt	FF_byte, A    
-    call	Save_current_index ; save index for 16th letter
+    movf    Length_state, 0, 0 
+    cpfsgt  FF_byte, A    
+    call    Save_current_index ; save index for 16th letter
 
-    movf	Length_state, 0, 0 
-    cpfsgt	FF_byte, A    
-    call	ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
+    movf    Length_state, 0, 0 
+    cpfsgt  FF_byte, A    
+    call    ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
 
-    movf	Length_state, 0, 0 
-    cpfsgt	FF_byte, A    
+    movf    Length_state, 0, 0 
+    cpfsgt  FF_byte, A    
     bra	Display
 	    ; word length less than 16 letters, continue
 
     ; display index_counter on PORTC
-    call	Display_index_counter 
+    call    Display_index_counter 
 
     ; Valid key press which is not the enter key and total word length is less than 16
-    call	Save_current_index
+    call    Save_current_index
 
     ; Translate index to ASCII and then save ASCII in word, then output letter on LCD
-    call	ASCII_lkup_display
+    call    ASCII_lkup_display
 
-    movlw	100      ; LCD delay ms has a limit!!!!!!!!!!!!!
-
-    call	LCD_delay_ms
-    call	LCD_delay_ms
-
+    call    Delay_between_keypresses
 
     goto	start
 Display:
@@ -243,17 +267,9 @@ Display:
     movf	index_counter, 0, 0  
     cpfslt	zero_byte, A    
     bra		start
-	
-    movlw   100
-    call    LCD_delay_ms
     
-    call Display_index_counter_word ; should only show 16
+    call Display_running ; 0xFF on PORTJ when display is running
     call Display_loop
-    
-    ;;;;;;DELAY
-    movlw 100     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call LCD_delay_ms
-    call LCD_delay_ms
   
     bra initialise	
     
@@ -264,17 +280,12 @@ Display_loop:
     movff final_braille, PORTH, A;show on braille
     
     movf timer_counter, 0, 0
-    call Delay_in_seconds
-    ;call LCD_delay_ms; external subroutines
-    ;call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    call Delay_in_seconds      ; number of seconds each character is displayed for
 
     movlw 0
     movwf PORTH, A;show on braille
 
-    movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
-    call LCD_delay_ms; external subroutines
-    call LCD_delay_ms; external subroutines dont uncomment this- too many delays
-    
+    call Delay_between_braille_display ; time pased when changing between two braille chr=aracters, must be long enough to let solenoids demagnetise
     
     decfsz index_counter, A
     bra Display_loop
@@ -299,4 +310,14 @@ Delay_one_second:
     call	LCD_delay_ms
     return
 
+Delay_between_keypresses:
+    movlw	250
+    call	LCD_delay_ms
+    ;call	LCD_delay_ms
+    return
 
+Delay_between_braille_display:
+    movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
+    call LCD_delay_ms; external subroutines
+    call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    return
