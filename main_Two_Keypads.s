@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet,timer_counter
+global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet,timer_counter,index,Delay_one_second
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -36,7 +36,10 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Display_clear,\
     Print_ST,\
     Set_Second_line,\
-    Write_delay
+    Write_delay,\
+    two_digit_number_display,\
+    Initialise_numbers,\
+    Print_EM
     ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -60,6 +63,7 @@ super_setup:
     call    LCD_Setup
     call    Initialise_braille
     call    Initialise_alphabet
+    call    Initialise_numbers
     call    Two_keypad_setup
 
    
@@ -83,9 +87,8 @@ timer_set:
     movwf   timer_counter, A
     movlw 0x0F
     movwf PORTJ, A
-
+    
 timer_set_loop:
-
     call Delay_between_keypresses
    
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
@@ -133,7 +136,9 @@ timer_set_loop:
     
     
     movff index, timer_counter
-    call ASCII_lkup_display ; represents kind of what we want to do
+    
+    call    two_digit_number_display
+    ;call ASCII_lkup_display ; represents kind of what we want to do
     ;
     ;
     ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
@@ -166,10 +171,21 @@ initialise: ;more of an initialise stage
     movwf   TRISH,A ; Braille characters are read onto PORTH
     movwf   TRISJ,A ; 0xFF on PORTJ while display is running, also shows error lights for invalid keypresses
 
-    goto    start
+    bra    EM_message
 
 	; ******* Main programme ****************************************
-start: 	
+EM_message: 	
+    call    Print_EM
+    call    Delay_one_second
+    call    Delay_one_second
+    call    LCD_Setup
+    
+    ;movlw   1
+    ;cpfsgt  index_counter
+    ;bra	    start
+    bra	    start
+    
+start:    
     
     ; Set PORTB and PORTF to output
     movlw	0x00
@@ -290,7 +306,7 @@ Display_loop:
    
     
 Delay_in_seconds:
-    movwf timer_counter_temp
+    movwf timer_counter_temp,A
 dlp2:    
     call Delay_one_second
     decfsz timer_counter_temp, A
