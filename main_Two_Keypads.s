@@ -73,14 +73,7 @@ super_setup:
     call    Print_OM
     call    Delay_one_second
     call    Delay_one_second
-    
-    ;call    Display_clear
-    
-    
-    ;call    Delay_one_second
-    ;call    Delay_one_second
-    
-    bra	    timer_set;initialise
+    bra	    timer_set
     
 timer_set:
     call    LCD_Setup
@@ -90,6 +83,7 @@ timer_set:
     movwf   timer_counter, A
     movlw 0x0F
     movwf PORTJ, A
+    call    Delay_between_keypresses
     
 timer_set_loop:
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
@@ -125,8 +119,7 @@ timer_set_loop:
     cpfsgt	invalid_index, A
     bra	timer_set_loop
 	    ; only one key pressed, continue
-
-    	    
+	    
     ; VALID KEY PRESS
     call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
 
@@ -134,19 +127,8 @@ timer_set_loop:
     cpfsgt	FF_byte, A 
     bra initialise      ;enter pressed
  
-    
-    
     movff index, timer_counter
-    
     call    two_digit_number_display
-    ;call ASCII_lkup_display ; represents kind of what we want to do
-    ;
-    ;
-    ; DISPLAY 'DELAY TIME: {TIMER_COUNTER} SEC', (MUSTNT GO OVER 16 CHARACTERS)
-    ;
-    ;
-    ;call    Write_delay
-    
     bra	timer_set_loop
     
     call Delay_between_keypresses
@@ -282,9 +264,7 @@ Display:
     ; needs to read indexes in turn and display them
     
     ; word length is 0, no letters have been entered befor enter key was pressed, branch to start
-    
-  
-    
+ 
     movf	index_counter, 0, 0  
     cpfslt	zero_byte, A    
     bra		start
@@ -312,7 +292,6 @@ Display_loop:
     bra Display_loop
     return
    
-    
 Delay_in_seconds:
     movwf timer_counter_temp,A
 dlp2:    
@@ -321,7 +300,6 @@ dlp2:
     bra dlp2
     return
    
-
 Delay_one_second:
 ; literal stored in w for no. seconds
     movlw	250
