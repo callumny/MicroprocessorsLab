@@ -92,11 +92,9 @@ timer_set:
     movwf PORTJ, A
     
 timer_set_loop:
-    call Delay_between_keypresses
-   
     ; NOW KEY IS PRESSED TO SET DELAY TIME: A = 1 SECOND, B = 2 SECOND ETC... (TIMER_COUNTER IS SET EQUAL TO INDEX OF PRESSED CHARACTER)
     
-;    ; generates row and column bytes for each keypad
+    ; generates row and column bytes for each keypad
     call Find_indices_and_button_press_states
 
     ; Check if any key has been pressed at all
@@ -151,7 +149,7 @@ timer_set_loop:
     
     bra	timer_set_loop
     
-    ;call Delay_between_keypresses
+    call Delay_between_keypresses
 	
     movlw 0x00
     movwf PORTJ, A
