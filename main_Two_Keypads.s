@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet,timer_counter,index,Delay_one_second
+global	start, initialise, index_counter, read_index, counter,final_braille,final_alphabet,timer_counter,index,Delay_one_second,EM_counter
 ;extrn  Two_keypad_setup, button_pressed_state, Display_E_and_D_press_state, E_and_D_press_state, Is_button_D_pressed, Check_pressed_2_D, Is_button_E_pressed, button_pressed_E,button_pressed_D, Check_pressed_2_E, Keypad_start_E, Keypad_start_D, Recombine_E, Recombine_D, Split_NOT_key_byte_E, Display_key_byte_E, Display_NOT_key_byte_E, Check_pressed_E, Find_index_E, Display_index_E, key_byte_E, NOT_key_byte_E, NOT_key_byte_low_E, NOT_key_byte_high_E, index_E, zero_byte, invalid_index  ; external subroutines
 
     
@@ -39,7 +39,9 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Write_delay,\
     two_digit_number_display,\
     Initialise_numbers,\
-    Print_EM
+    Print_EM,\
+    Clear_EM,\
+    Set_EM_counter
     ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -52,6 +54,7 @@ read_index: ds 1
 counter:    ds 1
 final_braille: ds 1
 final_alphabet: ds 1
+EM_counter: ds	1
     
     
 psect	code, abs	
@@ -82,7 +85,7 @@ super_setup:
 timer_set:
     call    LCD_Setup
     call    Print_ST
-    call Set_Second_line
+    call    Set_Second_line
     movlw   0x05
     movwf   timer_counter, A
     movlw 0x0F
@@ -148,7 +151,7 @@ timer_set_loop:
     
     bra	timer_set_loop
     
-    call Delay_between_keypresses
+    ;call Delay_between_keypresses
 	
     movlw 0x00
     movwf PORTJ, A
@@ -175,14 +178,12 @@ initialise: ;more of an initialise stage
 
 	; ******* Main programme ****************************************
 EM_message: 	
+    ;set EM_message_counter to 1
+    call    Set_EM_counter
     call    Print_EM
-    call    Delay_one_second
-    call    Delay_one_second
-    call    LCD_Setup
+    ;call    Delay_one_second
+    ;call    LCD_Setup
     
-    ;movlw   1
-    ;cpfsgt  index_counter
-    ;bra	    start
     bra	    start
     
 start:    
@@ -223,9 +224,15 @@ start:
     cpfsgt	invalid_index, A
     bra	start
 	    ; only one key pressed, continue
+	    
+    call    Clear_EM
 
-
-
+    ;
+    ;
+    ;
+    ;
+    ;
+    ;
 
     ;ONLY VALID KEYPRESSES REMAINING
     call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
@@ -277,6 +284,9 @@ Display:
     ; needs to read indexes in turn and display them
     
     ; word length is 0, no letters have been entered befor enter key was pressed, branch to start
+    
+  
+    
     movf	index_counter, 0, 0  
     cpfslt	zero_byte, A    
     bra		start
