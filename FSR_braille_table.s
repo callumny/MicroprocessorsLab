@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global   Initialise_braille,Braille_lookup,Initialise_alphabet,Alphabet_lookup,Create_word,Write_display, ASCII_lkup_display
+global   Initialise_braille,Braille_lookup,Initialise_alphabet, Alphabet_display
 
 extrn	counter,final_alphabet,final_braille,index,read_index,index_counter,LCD_Write_Message,LCD_delay_ms,LCD_Send_Byte_D
 
@@ -74,32 +74,15 @@ loop_braille: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 	return
 
     
-Alphabet_lookup:	;takes the index and converts it into a letter, places in final_alphabet
+Alphabet_display:	;takes the index and converts it into a letter, places in final_alphabet
 
     lfsr    2, myArray_alphabet
     movf    index,W		    ;POSTINC2
     movff   PLUSW2,final_alphabet
+    movf    final_alphabet,W
+    call    LCD_Send_Byte_D
     return
     
-Create_word:	    ;takes the letter in final_alphabet and puts it in the correction position in the word (word stored at 0x600)
-    lfsr    2, word
-    movf    index_counter,W
-    addlw   -1		;because it starts at 601 for some reason, think its because the index is incremented before we call this
-    movff   final_alphabet,PLUSW2
-    return
-    
-    
-Write_display:
-	banksel	6
-	lfsr	2,word
-	movf	index_counter,W
-	addlw	-1
-	movf	PLUSW2,W
-	call	LCD_Send_Byte_D
-	banksel 0 
-	
-	return
-	
 Braille_lookup:
     ;need to initialise the fsr before doing anything
     lfsr    2, myArray_braille
@@ -108,8 +91,3 @@ Braille_lookup:
 
     return
     
-ASCII_lkup_display:
-    call	Alphabet_lookup
-    call	Create_word
-    call	Write_display
-    return
