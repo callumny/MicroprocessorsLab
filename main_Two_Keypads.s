@@ -81,8 +81,8 @@ timer_set:
     call    Set_Second_line
     movlw   0x05
     movwf   timer_counter, A
-    movlw 0x0F
-    movwf PORTJ, A
+    ;movlw 0xFF
+    ;movwf PORTJ, A
     call    Delay_between_keypresses
     
 timer_set_loop:
