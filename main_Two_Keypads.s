@@ -28,8 +28,8 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Read_each_index,\
     Initialise_braille,\
     Braille_lookup,\
-    Initialise_alphabet,Alphabet_lookup,Create_word,\
-    LCD_Setup,Write_display, ASCII_lkup_display,\
+    Initialise_alphabet,\
+    LCD_Setup, Alphabet_display,\
     Check_delay_set_key, Delay_set_key_state,\
     Find_indices_and_button_press_states,\
     Print_OM,\
@@ -203,16 +203,10 @@ start:
     movf	index, 0, 0 ; same check as above but now branches to start
     cpfsgt	invalid_index, A
     bra	start
-	    ; only one key pressed, continue
+    ; only one key pressed, continue
 	    
+    ;clear the 'Enter Word' message after the first button is pressed
     call    Clear_EM
-
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
 
     ;ONLY VALID KEYPRESSES REMAINING
     call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
@@ -222,12 +216,12 @@ start:
 
 
     ; Check if enter has been pressed
-    call	Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
+    call    Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
 
     movf	Enter_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
     cpfsgt	FF_byte, A 
-    bra	Display       ;enter pressed
-	    ; no enter pressed, continue
+    bra		Display       ;enter pressed
+    ; no enter pressed, continue
 
     ;increment index_counter
     incf    index_counter, 1, 0
@@ -241,7 +235,7 @@ start:
 
     movf    Length_state, 0, 0 
     cpfsgt  FF_byte, A    
-    call    ASCII_lkup_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
+    call    Alphabet_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
 
     movf    Length_state, 0, 0 
     cpfsgt  FF_byte, A    
@@ -255,7 +249,7 @@ start:
     call    Save_current_index
 
     ; Translate index to ASCII and then save ASCII in word, then output letter on LCD
-    call    ASCII_lkup_display
+    call    Alphabet_display
 
     call    Delay_between_keypresses
 
