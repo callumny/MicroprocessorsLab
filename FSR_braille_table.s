@@ -77,7 +77,7 @@ loop_braille: 	tblrd*+			; one byte from PM to TABLAT, increment TBLPRT
 Alphabet_lookup:	;takes the index and converts it into a letter, places in final_alphabet
 
     lfsr    2, myArray_alphabet
-    movf    index,W
+    movf    index,W		    ;POSTINC2
     movff   PLUSW2,final_alphabet
     return
     
