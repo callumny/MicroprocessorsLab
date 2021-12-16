@@ -95,17 +95,21 @@ timer_set_loop:
     movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
     cpfslt	zero_byte, A    
     bra	timer_set_loop    ; no key pressed 
-	    ; at least one key is pressed, continue
+    
+    ; at least one key is pressed, continue
 
     ; Check the key(s) pressed are on only one port, i.e. check buttons on both ports keypads havent been pressed simultaneously
     movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
     cpfsgt	FF_byte, A    
     call	Invalid_button_press_one ; keys on both keypads have been pressed simultaneously, 0x11 error light on PORTJ
-	    ; key(s) pressed are only one port, continue 
+
+    ; key(s) pressed are only one port, continue 
+    
     movf	button_pressed_state, 0, 0 ; same check as above but now branches to start
     cpfsgt	FF_byte, A
     bra	timer_set_loop
-	    ; key(s) pressed are only one port, continue 
+    
+    ; key(s) pressed are only one port, continue 
 
     ; retrieves index by identifying whether keypad E or D is pressed and then using single keypad indices
     call	Two_keypad_find_index 
