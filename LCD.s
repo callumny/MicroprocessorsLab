@@ -1,6 +1,6 @@
 #include <xc.inc>
 
-global  LCD_Setup, LCD_Write_Message, Display_clear, LCD_delay_ms, LCD_Send_Byte_D,Set_Second_line
+global  LCD_Setup, LCD_Write_Message, Display_clear, LCD_delay_ms, LCD_Send_Byte_D,Set_Second_line,LCD_delay_x4us,LCD_Send_Byte_I
 
 psect	udata_acs   ; named variables in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -165,7 +165,7 @@ Display_clear:
 	call	LCD_delay_x4us
 	return
 	
-	
+
 ;button_delay:
     
 ;	movlw	0xAA		;puts value of 0 in w reg
