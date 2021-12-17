@@ -41,7 +41,9 @@ extrn    Two_keypad_setup, button_pressed_state, \
     Initialise_numbers,\
     Print_EM,\
     Clear_EM,\
-    Set_EM_counter
+    Set_EM_counter,\
+    LCD_delay_x4us,\
+    LCD_delay_ms
     ; external subroutines
 ; external subroutines	LCD_Setup, LCD_Write_Message, Display_clear
 	
@@ -168,18 +170,23 @@ EM_message:
     ;call    Delay_one_second
     ;call    LCD_Setup
     
+    ;;;;;;;;;;;;; Send PORTJ Low	    ;;;;;;;;;
+    movlw	0x00
+    movwf	PORTJ, A	; Lowers all pegs 
+    
     bra	    start
     
 start:    
+    ;;;;;;;;;; pulse at start (40) ;;;;;;
     
     ; Set PORTB and PORTF to output
     movlw	0x00
     movwf	PORTH, A	; Lowers all pegs 
-    movwf	PORTJ, A	; set PORTJ back to 0x00 after display has finished
+    ;movwf	PORTJ, A	; set PORTJ back to 0x00 after display has finished
 
     ; generates row and column bytes for each keypad
     call Find_indices_and_button_press_states
-
+    
     ; Check if any key has been pressed at all
     movf	button_pressed_state, 0, 0 ; 0x00 for no key pressed,0x0F for E pressed only, 0xF0 for D pressed only, 0xFF for E and D button is pressed 
     cpfslt	zero_byte, A    
@@ -207,17 +214,22 @@ start:
     movf	index, 0, 0 ; same check as above but now branches to start
     cpfsgt	invalid_index, A
     bra	start
+    
+    
     ; only one key pressed, continue
-	    
+    
+    ;call    SW_4 ;;;;;;;;send high
+    
     ;clear the 'Enter Word' message after the first button is pressed
     call    Clear_EM
 
     ;ONLY VALID KEYPRESSES REMAINING
+
     call	Check_delay_set_key ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
     movf	Delay_set_key_state, 0, 0 ; 0x00 for no enter pressed, 0xFF for enter is pressed
     cpfsgt	FF_byte, A 
     bra	timer_set       ;enter pressed
-
+    
 
     ; Check if enter has been pressed
     call    Check_enter ; defines Enter_state: 0x00 for no enter pressed, 0xFF for enter is pressed
@@ -240,7 +252,8 @@ start:
     movf    Length_state, 0, 0 
     cpfsgt  FF_byte, A    
     call    Alphabet_display ; translate index to ASCII and write to LCD for 16th letter, as for another normal letter
-
+    
+    
     movf    Length_state, 0, 0 
     cpfsgt  FF_byte, A    
     bra	Display
@@ -255,6 +268,9 @@ start:
     ; Translate index to ASCII and then save ASCII in word, then output letter on LCD
     call    Alphabet_display
 
+    ;;;;;; LCD delay
+    ;call    SW_80
+    
     call    Delay_between_keypresses
 
     goto	start
@@ -262,21 +278,25 @@ Display:
     ; needs to read indexes in turn and display them
     
     ; word length is 0, no letters have been entered befor enter key was pressed, branch to start
- 
+    
+    
     movf	index_counter, 0, 0  
     cpfslt	zero_byte, A    
     bra		start
     
-    call Display_running ; 0xFF on PORTJ when display is running
+    ;call Display_running ; 0xFF on PORTJ when display is running
     call Display_loop
   
     bra initialise	
     
 Display_loop:
-    
+    ;call    SW_4
+        
     call Read_each_index
     call    Braille_lookup
     movff final_braille, PORTH, A;show on braille
+    
+     ;call    SW_80
     
     movf timer_counter, 0, 0
     call Delay_in_seconds      ; number of seconds each character is displayed for
@@ -288,6 +308,7 @@ Display_loop:
     
     decfsz index_counter, A
     bra Display_loop
+    
     return
    
 Delay_in_seconds:
@@ -317,4 +338,26 @@ Delay_between_braille_display:
     movlw 250     ; LCD delay ms has a limit!!!!!!!!!!!!!
     call LCD_delay_ms; external subroutines
     call LCD_delay_ms; external subroutines dont uncomment this- too many delays
+    return
+    
+SW_4:
+    movlw 0x01
+    movwf PORTJ, A
+    
+    movlw   1
+    call    LCD_delay_ms
+    
+    movlw   0x00
+    movwf   PORTJ,A
+    return
+    
+SW_80:
+    movlw 0x01
+    movwf PORTJ, A
+    
+    movlw   2
+    call    LCD_delay_ms
+    
+    movlw   0x00
+    movwf   PORTJ,A
     return
